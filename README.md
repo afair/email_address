@@ -14,6 +14,13 @@ remove false positives in validation, and help the email community
 evolve into a friendlier place. I like standards as much as the next
 person, but enough is enough!
 
+Why my opinion? I've been working with email and such since the late
+1990's. I would like to see modern practices applied to email addresses.
+These rules really do apply to most (without real statistics, I'll claim
+99.9+%) usage in the 21st Century. They may not be for everyone, you may
+need strict adherence to these standards for historical reasons, but I
+bet you'll wish you could support this one instead!
+
 ## Installation
 
 Add this line to your application's Gemfile:

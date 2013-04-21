@@ -12,7 +12,8 @@ module EmailAddress
   # EmailAddress::Host handles mail host properties of an email address
   # The host is typically the data to the right of the @ in the address
   # and consists of:
-  # * hostname (full name of DNS host with the MX record
+  #
+  # * hostname - full name of DNS host with the MX record.
   # * domain_name - generally, the name and TLD without subdomain
   # * base_domain - the identity name of the domain name, without the tld
   # * tld (top-level-domain), like .com, .co.jp, .com.xx, etc.
@@ -44,6 +45,7 @@ module EmailAddress
         end
         @domain_name  = @base_domain + '.' + @tld
         @dns_hostname = SimpleIDN.to_ascii(@host)
+        @host
       end
     end
 
