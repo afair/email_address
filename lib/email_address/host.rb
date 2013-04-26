@@ -30,6 +30,11 @@ module EmailAddress
       self.host = host
     end
 
+    def address(mailbox)
+      # Determine EmailAddress::Provider::Xxxx
+      EmailAddress::Address.new(mailbox, self)
+    end
+
     def host=(host)
       @host = host
       # Patterns: *.com, *.xx.cc, *.cc
@@ -47,6 +52,11 @@ module EmailAddress
         @dns_hostname = SimpleIDN.to_ascii(@host)
         @host
       end
+    end
+
+    # Resets the host to the domain name, dropping any subdomain
+    def drop_subdomain!
+      self.hostname = domain_name
     end
 
     def valid?
