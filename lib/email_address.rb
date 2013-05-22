@@ -12,6 +12,11 @@ class EmailAddress
     self.address = email
   end
 
+  ##############################################################################
+  # Basic email address: local@domain
+  # Only supporting FQDN's (Fully Qualified Domain Names)?
+  # Length: Up to 254 characters
+  ##############################################################################
   def address=(email)
     @address = email.strip
     (local_name, domain_name) = @address.split('@')
@@ -26,9 +31,11 @@ class EmailAddress
 
   ##############################################################################
   # Domain Parsing
+  # Parts: subdomains.basedomain.top-level-domain
   # IPv6/IPv6: [128.0.0.1], [IPv6:2001:db8:1ff::a0b:dbd0]
   # Comments: (comment)example.com, example.com(comment)
   # Internationalized: Unicode to Punycode
+  # Length: up to 255 characters
   ##############################################################################
   def domain=(host_name)
     host_name ||= ''
@@ -43,7 +50,7 @@ class EmailAddress
     if @domain =~ /\A(.+)\.(\w{3,10})\z/ || @domain =~ /\A(.+)\.(\w{1,3}\.\w\w)\z/ || @domain =~ /\A(.+)\.(\w\w)\z/
       @top_level_domain = $2;
       sld = $1 # Second level domain
-      if @sld =~ /\A(.+)\.(.+)\z/ # is subdomain?
+      if sld =~ /\A(.+)\.(.+)\z/ # is subdomain? sub.example [.tld]
         @subdomains  = $1
         @base_domain = $2
       else
@@ -61,8 +68,8 @@ class EmailAddress
   ##############################################################################
   # Parsing id provider-dependent, but RFC allows:
   # A-Z a-z 0-9 . ! # $ % ' * + - / = ? ^ _ { | } ~
-  # Quoted: space ( ) , : ; < > @ [ ] 
-  # Quoted-Backslash-Escaped: \ " 
+  # Quoted: space ( ) , : ; < > @ [ ]
+  # Quoted-Backslash-Escaped: \ "
   # Quote local part or dot-separated sub-parts x."y".z
   # (comment)mailbox | mailbox(comment)
   # 8-bit/UTF-8: allowed but mail-system defined
@@ -70,6 +77,7 @@ class EmailAddress
   # Postmaster: must always be case-insensitive
   # Case: sensitive, but usually treated as equivalent
   # Local Parts: comment, account tag
+  # Length: upt o 64 cgaracters
   ##############################################################################
   def local=(local)
     local ||= ''
@@ -92,6 +100,10 @@ class EmailAddress
     local
   end
 
+  ##############################################################################
+  # Provider-Specific Settings
+  ##############################################################################
+
   def provider
    # @provider ||= EmailProviders::Default.new
    'unknown'
@@ -107,7 +119,12 @@ class EmailAddress
 
   # Returns the unique address as simplified account@hostname
   def unique_address
-    "#{account}@#{dns_hostname}"
+    "#{account}@#{dns_hostname}".downcase
+  end
+
+  # Letters, numbers, period (no start) 6-30chars
+  def user_pattern
+   /\A[a-z0-9][\.a-z0-9]{0,29}\z/i
   end
 
   ##############################################################################
@@ -115,7 +132,7 @@ class EmailAddress
   ##############################################################################
   def valid?
     return false unless @local =~ user_pattern
-    return false unless @host.valid?
+    return false unless provider # .valid_domain
     true
   end
 
@@ -124,10 +141,5 @@ class EmailAddress
     return false unless @host.valid_format?
     true
   end
-  
- # Letters, numbers, period (no start) 6-30chars
- def user_pattern
-   /\A[a-z0-9][\.a-z0-9]{5,29}\z/i
- end
 
 end

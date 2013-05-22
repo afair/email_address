@@ -16,12 +16,12 @@ class TestEmailAddress < MiniTest::Unit::TestCase
   end
 
   def test_foreign_address
-    a = EmailAddress.new("user@example.co.jp")
-    assert_equal a.domain, "example.co.jp"
+    a = EmailAddress.new("user@sub.example.co.jp")
+    assert_equal a.domain, "sub.example.co.jp"
+    assert_equal a.subdomains, "sub"
     assert_equal a.domain_name, "example.co.jp"
     assert_equal a.base_domain, "example"
     assert_equal a.top_level_domain, "co.jp"
-    assert_equal a.subdomains, ""
   end
 
   def test_address_tag
@@ -40,12 +40,13 @@ class TestEmailAddress < MiniTest::Unit::TestCase
 
   def test_user_validation
     a = EmailAddress.new("user@example.co.jp")
-    
+    assert a.valid? == true
   end
 
   def test_unicode_domain
-    a = EmailAddress.new("bob@københavn.eu")
+    a = EmailAddress.new("User@København.eu")
     assert_equal a.dns_hostname, 'xn--kbenhavn-54a.eu'
+    assert_equal a.unique_address, 'user@xn--kbenhavn-54a.eu'
   end
 
 end
