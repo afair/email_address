@@ -9,30 +9,39 @@ module EmailAddress
       @options = options
     end
 
+    # True if the DNS A record or MX records are defined
+    # Why A record? Some domains are misconfigured with only the A record. 
     def valid?
+      has_dns_a_record? || valid_mx?
     end
 
-    def self.valid_mx?
-      dns_a_record_exists?(domain) || mxers(domain).size > 0
-    end
-
-    def dns_a_record
-      @_dns_a_record ||= Socket.gethostbyname(@host)
-    rescue SocketError # not found
-      @_dns_a_record ||= []
+    # True if the DNS MX records have been defined. More strict than #valid?
+    def valid_mx?
+      mxers.size > 0
     end
 
     def has_dns_a_record?
       dns_a_record.size > 0 ? true : false
     end
 
+    def dns_a_record
+      @_dns_a_record ||= Socket.gethostbyname(@host)
+    rescue SocketError # not found, but could also mean network not work
+      @_dns_a_record ||= []
+    end
+
     # Returns: [["mta7.am0.yahoodns.net", "66.94.237.139", 1], ["mta5.am0.yahoodns.net", "67.195.168.230", 1], ["mta6.am0.yahoodns.net", "98.139.54.60", 1]]
     # If not found, returns []
     def mxers
-      Resolv::DNS.open do |dns|
+      @mxers ||= Resolv::DNS.open do |dns|
         ress = dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
         ress.map { |r| [r.exchange.to_s, IPSocket::getaddress(r.exchange.to_s), r.preference] }
       end
+    end
+
+    # Returns Array of domain names for the MX'ers, used to determine the Provider
+    def domains
+      mxers.map {|m| EmailAddress::DomainParser.new(m.first).domain_name}.sort.uniq
     end
 
     # Returns an array of MX IP address (String) for the given email domain

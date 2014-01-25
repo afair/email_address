@@ -35,6 +35,10 @@ module EmailAddress
          /\A[a-z0-9][\.\'a-z0-9]{5,29}\z/i
        end
 
+       def self.canonical_mailbox(mailbox)
+         mailbox
+       end
+
        def self.valid?
          return false unless valid_format?
        end

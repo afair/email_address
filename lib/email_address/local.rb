@@ -43,7 +43,7 @@ module EmailAddress
     end
 
     def canonical
-      @mailbox =~ /\s/ ? "#{@host.canonical_local(@mailbox)}" : @mailbox
+      @mailbox =~ /\s/ ? "#{@provider.canonical_mailbox(@mailbox)}" : @mailbox
     end
 
     def parse_comment
@@ -58,6 +58,7 @@ module EmailAddress
     end
 
     def parse_tag
+      return unless @provider.tag_separator
       parts = @mailbox.split(@provider.tag_separator, 2)
       (@mailbox, @tag) = *parts if parts.size > 1
     end

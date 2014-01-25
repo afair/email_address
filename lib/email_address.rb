@@ -1,5 +1,6 @@
 require "email_address/address"
 require "email_address/config"
+require "email_address/domain_parser"
 require "email_address/esp"
 require "email_address/exchanger"
 require "email_address/host"
