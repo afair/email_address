@@ -4,8 +4,8 @@ require_relative '../test_helper'
 class TestAddress < Minitest::Test
   def test_address
     a = EmailAddress.new("User+tag@example.com")
-    assert_equal "user+tag", a.local
-    assert_equal "example.com", a.host
+    assert_equal "user+tag", a.local.to_s
+    assert_equal "example.com", a.host.to_s
     assert_equal :unknown, a.provider
   end
   

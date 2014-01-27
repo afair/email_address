@@ -56,7 +56,7 @@ module EmailAddress
     end
 
     def canonical
-      m= @mailbox
+      m= @mailbox.downcase
       if @provider[:canonical_mailbox]
         m = @provider[:canonical_mailbox].call(m)
       end

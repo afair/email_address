@@ -16,15 +16,31 @@ module EmailAddress
     end
 
     def host
-      @host.to_s
+      @host
     end
 
     def local
-      @local.to_s
+      @local
+    end
+
+    def mailbox
+      @local.mailbox
+    end
+
+    def tag
+      @local.tag
+    end
+
+    def comment
+      @local.comment
     end
 
     def provider
       @host.provider
+    end
+
+    def to_s
+      [@local.to_s, @host.to_s].join('@')
     end
 
     def normalize

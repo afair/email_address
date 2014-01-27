@@ -67,6 +67,10 @@ module EmailAddress
       end
       @provider ||= :unknown
     end
+    
+    def matches?(*names)
+      DomainMatcher.matches?(@host_name, names.flatten)
+    end
 
   end
 end
