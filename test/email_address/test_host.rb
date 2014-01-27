@@ -33,4 +33,11 @@ class TestHost < MiniTest::Unit::TestCase
     assert_equal "xn--5ca.com", a.dns_host_name
   end
 
+  def test_provider
+    a = EmailAddress::Host.new("my.yahoo.co.jp")
+    assert_equal :yahoo, a.provider
+    a = EmailAddress::Host.new("example.com")
+    assert_equal :unknown, a.provider
+  end
+
 end

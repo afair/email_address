@@ -3,10 +3,11 @@ require_relative '../test_helper'
 class TestConfig < MiniTest::Test
   def test_setup
     EmailAddress::Config.setup do
-      provider :google, domain_names: %w(gmail.com googlemail.com google.com)
-      option   :downcase_mailboxes, false
+      provider :disposable, domains:%w(mailenator)
+      option   :downcase_mailboxes, true
     end
-    assert_equal true, EmailAddress::Config.setup.providers.has_key?(:google)
+    assert_equal true, EmailAddress::Config.providers.has_key?(:disposable)
+    assert_equal true, EmailAddress::Config.options[:downcase_mailboxes]
   end
   
 end

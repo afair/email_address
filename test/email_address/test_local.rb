@@ -13,5 +13,15 @@ class TestLocal < MiniTest::Unit::TestCase
     assert_equal "comment!", a.comment
     assert_equal "tag", a.tag
   end
+
+  def test_format
+    a = EmailAddress::Local.new("(Comment!)First Last+tag")
+    assert_equal 'firstlast+tag', a.normalize
+  end
+
+  def test_gmail
+    a = EmailAddress::Local.new("first.last", :google)
+    assert_equal "firstlast", a.canonical
+  end
   
 end

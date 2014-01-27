@@ -23,7 +23,7 @@ module EmailAddress
     attr_reader :mailbox, :comment, :tag, :local
 
     def initialize(local, provider=nil)
-      @provider = provider || EmailAddress::Providers::Default
+      @provider = EmailAddress::Config.provider(provider || :default)
       parse(local)
     end
 
@@ -35,15 +35,44 @@ module EmailAddress
     def parse(local)
       @local = local =~ /\A"(.)"\z/ ? $1 : local
       @local.gsub!(/\\(.)/, '\1') # Unescape
-      @local.downcase! unless @provider.case_sensitive_mailbox
+      @local.downcase! unless @provider[:case_sensitive]
+      @local.gsub!(' ','') unless @provider[:keep_space]
 
       @mailbox = @local
+      @comment = @tag = nil
       parse_comment
       parse_tag
     end
 
+    def normalize
+      m = @mailbox
+      m+= @provider[:tag_separator] + @tag if @tag && !@tag.empty?
+      m+= "(#{@comment})" if @comment && !@comment.empty? && @provider[:keep_comment]
+      format(m)
+    end
+
+    def normalize!
+      parse(normalize)
+    end
+
     def canonical
-      @mailbox =~ /\s/ ? "#{@provider.canonical_mailbox(@mailbox)}" : @mailbox
+      m= @mailbox
+      if @provider[:canonical_mailbox]
+        m = @provider[:canonical_mailbox].call(m)
+      end
+      format(m)
+    end
+
+    def canonicalize!
+      parse(canonical)
+    end
+
+    def format(m)
+      m = m.gsub(/([\\\"])/, '\\\1') # Escape \ and "
+      if m =~ /[ \"\(\),:'<>@\[\\\]]/ # Space and "(),:;<>@[\] 
+        m = %Q("#{m}")
+      end
+      m
     end
 
     def parse_comment
@@ -58,8 +87,8 @@ module EmailAddress
     end
 
     def parse_tag
-      return unless @provider.tag_separator
-      parts = @mailbox.split(@provider.tag_separator, 2)
+      return unless @provider[:tag_separator]
+      parts = @mailbox.split(@provider[:tag_separator], 2)
       (@mailbox, @tag) = *parts if parts.size > 1
     end
   end

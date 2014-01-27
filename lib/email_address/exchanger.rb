@@ -4,9 +4,17 @@ require 'socket'
 
 module EmailAddress
   class Exchanger
+    include Enumerable
+
     def initialize(host, options={})
       @host = host
       @options = options
+    end
+
+    def each(&block)
+      mxers.each do |m|
+        yield({host:m[0], ip:m[1], priority:m[2]})
+      end
     end
 
     # True if the DNS A record or MX records are defined
@@ -18,6 +26,18 @@ module EmailAddress
     # True if the DNS MX records have been defined. More strict than #valid?
     def valid_mx?
       mxers.size > 0
+    end
+
+    # Returns the provider name based on the MX-er host names, or nil if not matched
+    def provider
+      base = EmailAddress::Config.providers[:default]
+      EmailAddress::Config.providers.each do |name, defn|
+        defn = base.merge(defn)
+        self.each do |m|
+         return name if DomainMatcher.matches?(m[:host], defn[:exchangers])
+        end
+      end
+      nil
     end
 
     def has_dns_a_record?
@@ -50,13 +70,9 @@ module EmailAddress
     end
 
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.
-    def self.in_cidr?(cidr)
+    def in_cidr?(cidr)
       @cidr ||= NetAddr::CIDR.create(cidr)
-      if 0 < mx_ips.reduce(0) { |ip| @cider.matches?(ip) }
-        true
-      else
-        false
-      end
+      mx_ips.first { |ip| @cider.matches?(ip) } ? true : false
     end
   end
 end

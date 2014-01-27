@@ -6,11 +6,19 @@ class TestAddress < Minitest::Test
     a = EmailAddress.new("User+tag@example.com")
     assert_equal "user+tag", a.local
     assert_equal "example.com", a.host
+    assert_equal :unknown, a.provider
   end
   
+  def test_noramlize
+    a = EmailAddress.new("User+tag@Example.com")
+    assert_equal "user+tag@example.com", a.normalize
+  end
+
   def test_canonical
     a = EmailAddress.new("User+tag@Example.com")
     assert_equal "user@example.com", a.canonical
+    a = EmailAddress.new("first.last+tag@gmail.com")
+    assert_equal "firstlast@gmail.com", a.canonical
   end
 
   def test_digest

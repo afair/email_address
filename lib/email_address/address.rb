@@ -11,8 +11,8 @@ module EmailAddress
 
     def parse
       (_, local, host) = @address.match(/\A(.+)@(.+)/).to_a
-      @local = EmailAddress::Local.new(local)
       @host = EmailAddress::Host.new(host)
+      @local = EmailAddress::Local.new(local, @host.provider)
     end
 
     def host
@@ -21,6 +21,14 @@ module EmailAddress
 
     def local
       @local.to_s
+    end
+
+    def provider
+      @host.provider
+    end
+
+    def normalize
+      [@local.normalize, @host.normalize].join('@')
     end
 
     def canonical

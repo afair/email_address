@@ -52,5 +52,15 @@ module EmailAddress
        registration_name:@registration_name, tld:@tld, ip_address:@ip_address}
     end
 
+    # Returns provider based on configured domain name matches, or nil if unmatched
+    # For best results, # consider the Exchanger.provider result as well.
+    def provider
+      base = EmailAddress::Config.providers[:default]
+      EmailAddress::Config.providers.each do |name, defn|
+        defn = base.merge(defn)
+        return name if EmailAddress::DomainMatcher.matches?(@host_name, defn[:domains])
+      end
+      nil
+    end
   end
 end

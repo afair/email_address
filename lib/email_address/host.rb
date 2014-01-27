@@ -19,8 +19,15 @@ module EmailAddress
     attr_reader :host_name, :parts, :domain_name, :registration_name,
                 :tld, :subdomains, :ip_address
 
-    def initialize(host_name)
+    # host name -
+    #   * full domain name after @ for email types
+    #   * fully-qualified domain name
+    # host type - 
+    #   :email - email address domain
+    #   :mx    - email exchanger domain
+    def initialize(host_name, host_type=:email)
       @host_name = host_name.downcase
+      @host_type = host_type
       parse_host(@host_name)
     end
 
@@ -29,7 +36,8 @@ module EmailAddress
     end
       
     def parse_host(host)
-      @parts = EmailAddress::DomainParser.parse(host)
+      @parser = EmailAddress::DomainParser.new(host)
+      @parts  = @parser.parts
       @parts.each { |k,v| instance_variable_set("@#{k}", v) }
     end
 
@@ -38,9 +46,27 @@ module EmailAddress
       @dns_host_name ||= ::SimpleIDN.to_ascii(@host_name)
     end
 
+    def normalize
+      dns_host_name
+    end
+
     # The canonical host name is the simplified, DNS host name
     def canonical
       dns_host_name
     end
+
+    def exchanger
+      return nil unless @host_type == :email
+      @exchanger = EmailAddress::Exchanger.new(@host_name)
+    end
+
+    def provider
+      @provider ||= @parser.provider
+      if !@provider && EmailAddress::Config.options[:check_dns]
+        @provider = exchanger.provider
+      end
+      @provider ||= :unknown
+    end
+
   end
 end
