@@ -6,7 +6,6 @@ require "email_address/esp"
 require "email_address/exchanger"
 require "email_address/host"
 require "email_address/local"
-require "email_address/providers/default"
 require "email_address/validator"
 require "email_address/version"
 
