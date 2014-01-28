@@ -64,7 +64,7 @@ module EmailAddress
     end
 
     def valid?(options={})
-      EmailAddress::Validator.validate(@local, @host, options)
+      EmailAddress::Validator.validate(self, options)
     end
   end
 end

@@ -17,7 +17,7 @@ module EmailAddress
          mailbox_size:      1..64,
          mailbox_unicode:   false,
          canonical_mailbox: ->(m) {m},
-         valid_mailbox:     ->(m) {true},
+         valid_mailbox:     nil,  # :legible, :rfc, ->(m) {true}
        },
        aol: {
          registration_names: %w(aol compuserve netscape aim cs)
@@ -27,7 +27,7 @@ module EmailAddress
          exchangers:        %w(google.com),
          local_size:        5..64,
          canonical_mailbox: ->(m) {m.gsub('.','')},
-         valid_mailbox:    ->(m) { m =~ /\A[a-z0-9][\.a-z0-9]{5,29}\z/i},
+         #valid_mailbox:    ->(local) { local.mailbox =~ /\A[a-z0-9][\.a-z0-9]{5,29}\z/i},
        },
        msn: {
          valid_mailbox:    ->(m) { m =~ /\A[a-z0-9][\.\-a-z0-9]{5,29}\z/i},

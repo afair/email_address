@@ -4,7 +4,7 @@ require_relative '../test_helper'
 class TestExchanger < MiniTest::Test
   def test_exchanger
     a = EmailAddress::Exchanger.new("example.com")
-    assert_equal true, a.valid?
+    assert_equal true, a.has_dns_a_record? # example.com has no MX'ers
   end
 
   def test_dns
