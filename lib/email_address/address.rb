@@ -40,7 +40,7 @@ module EmailAddress
     end
 
     def to_s
-      [@local.to_s, @host.to_s].join('@')
+      normalize
     end
 
     def normalize
@@ -64,7 +64,7 @@ module EmailAddress
     end
 
     def valid?(options={})
-      EmailAddress::Vaildator.validate(@local, @host, options)
+      EmailAddress::Validator.validate(@local, @host, options)
     end
   end
 end

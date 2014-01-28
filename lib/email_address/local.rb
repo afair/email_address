@@ -6,7 +6,7 @@ module EmailAddress
   # - tag
   #-----------------------------------------------------------------------------
   # Parsing id provider-dependent, but RFC allows:
-  # Chars: A-Z a-z 0-9 . ! # $ % ' * + - / = ? ^ _ { | } ~
+  # Chars: A-Z a-z 0-9 . ! # $ % ' * + - / = ? ^G _ { | } ~
   # Quoted: space ( ) , : ; < > @ [ ]
   # Quoted-Backslash-Escaped: \ "
   # Quote local part or dot-separated sub-parts x."y".z
@@ -20,16 +20,13 @@ module EmailAddress
   # Length: up to 64 characters
   ##############################################################################
   class Local
-    attr_reader :mailbox, :comment, :tag, :local
+    attr_accessor :mailbox, :comment, :tag, :local
+    ROLE_NAMES = %w(info marketing sales support abuse noc security postmaster
+                    hostmaster usenet news webmaster www uucp ftp)
 
     def initialize(local, provider=nil)
       @provider = EmailAddress::Config.provider(provider || :default)
       parse(local)
-    end
-
-    def to_s
-      # Quote & Escape if necessary...
-      @local
     end
 
     def parse(local)
@@ -42,6 +39,10 @@ module EmailAddress
       @comment = @tag = nil
       parse_comment
       parse_tag
+    end
+
+    def to_s
+      normalize
     end
 
     def normalize
@@ -90,6 +91,11 @@ module EmailAddress
       return unless @provider[:tag_separator]
       parts = @mailbox.split(@provider[:tag_separator], 2)
       (@mailbox, @tag) = *parts if parts.size > 1
+    end
+
+    # RFC2142 - Mailbox Names for Common Services, Rules, and Functions
+    def role?
+      ROLE_NAMES.include?(@mailbox)
     end
   end
 end

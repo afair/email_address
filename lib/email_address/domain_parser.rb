@@ -25,12 +25,17 @@ module EmailAddress
     end
 
     def parse_host(host)
-      @host_name  = host.strip.downcase
+      @host_name  = host.strip.downcase.gsub(' ', '').gsub(/\(.*\)/, '')
       @subdomains = @registration_name = @domain_name = @tld = ''
       @ip_address = nil
 
+      # IP Address: [127.0.0.1], [IPV6:.....]
       if @host_name =~ /\A\[(.+)\]\z/
         @ip_address = $1
+
+      # Subdomain only (root@localhost)
+      elsif @host_name.index('.').nil?
+        @subdomains = @host_name
 
       # Split sub.domain from .tld: *.com, *.xx.cc, *.cc
       elsif @host_name =~ /\A(.+)\.(\w{3,10})\z/ ||

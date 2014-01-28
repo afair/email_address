@@ -17,17 +17,6 @@ module EmailAddress
       end
     end
 
-    # True if the DNS A record or MX records are defined
-    # Why A record? Some domains are misconfigured with only the A record. 
-    def valid?
-      has_dns_a_record? || valid_mx?
-    end
-
-    # True if the DNS MX records have been defined. More strict than #valid?
-    def valid_mx?
-      mxers.size > 0
-    end
-
     # Returns the provider name based on the MX-er host names, or nil if not matched
     def provider
       base = EmailAddress::Config.providers[:default]
