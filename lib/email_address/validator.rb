@@ -87,6 +87,7 @@ module EmailAddress
     end
 
     def valid_google_local?
+      true
     end
 
     ############################################################################
