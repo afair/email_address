@@ -27,6 +27,10 @@ module EmailAddress
       @local.mailbox
     end
 
+    def host_name
+      @host.host_name
+    end
+
     def tag
       @local.tag
     end
