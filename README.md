@@ -1,5 +1,7 @@
 # Email Address
 
+[![Gem Version](https://badge.fury.io/rb/email_address.svg)](http://rubygems.org/gems/email_address)
+
 The EmailAddress gem is an _opinionated_ email address handler and
 validator. It does not use RFC standards because they make things worse.
 Email addresses should conform to a few practices that are not
@@ -27,6 +29,9 @@ punctuation).
 
 If you're on board, let's go!
 
+I intend to make this support most features I consider bad practices,
+but want the "golden path" to git this model.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -49,6 +54,7 @@ EmailAddress:
     email = EmailAddress.new("USER+tag@EXAMPLE.com")
     email.normalize     #=> "user+tag@example.com"
     email.canonical     #=> "user@example.com"
+    email.obscure       #=> "63a710569261a24b3766275b7000ce8d7b32e2f7@example.com"
 
 Email Service Provider (ESP) specific edits can be created to provide
 validations and canonical manipulations. A few are given out of the box.
@@ -71,6 +77,7 @@ You can inspect the MX (Mail Exchanger) records
 You can see if it validates as an opinionated address:
 
     email.valid?      # Resonably valid?
+    email.errors      #=> [:mx]
     email.valid_host? # Host name is defined in DNS
     email.strict?     # Strictly valid?
 

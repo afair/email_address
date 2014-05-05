@@ -25,6 +25,12 @@ class TestAddress < Minitest::Test
     a = EmailAddress.new("User+tag@Example.com")
     assert_equal "b58996c504c5638798eb6b511e6f49af", a.md5
     assert_equal "63a710569261a24b3766275b7000ce8d7b32e2f7", a.sha1
-    assert_equal "63a710569261a24b3766275b7000ce8d7b32e2f7@example.com", a.archive
+    assert_equal "63a710569261a24b3766275b7000ce8d7b32e2f7@example.com", a.obscure
+  end
+
+  def test_idn
+    a = EmailAddress.new("User+tag@ɹᴉɐℲuǝll∀.ws")
+    assert_equal "user@xn--ull-6eb78cvh231oq7gdzb.ws", a.canonical
+    assert_equal "9c06226d81149f59b4df32bb426c64a0cbafcea5@xn--ull-6eb78cvh231oq7gdzb.ws", a.obscure
   end
 end

@@ -63,12 +63,24 @@ module EmailAddress
       Digest::SHA1.hexdigest(canonical)
     end
 
-    def archive
+    # Obscure the address for storage. To protect the user's privacy,
+    # use this when you don't want to store a real email, only a fingerprint.
+    # Given the original address, you can match the original with this method.
+    # This returns the SHA1 of the canonical address (no tags, no gmail dots)
+    # at the original host. The host is part of the digest part, but also
+    # retained for verification and domain maintenance.
+    def obscure
       [sha1, @host.canonical].join('@')
     end
 
     def valid?(options={})
       EmailAddress::Validator.validate(self, options)
+    end
+
+    def errors(options={})
+      v = EmailAddress::Validator.new(self, options)
+      v.valid?
+      v.errors
     end
   end
 end

@@ -57,7 +57,7 @@ module EmailAddress
 
     def exchanger
       return nil unless @host_type == :email
-      @exchanger = EmailAddress::Exchanger.new(@host_name)
+      @exchanger = EmailAddress::Exchanger.new(self.dns_host_name)
     end
 
     def provider
@@ -74,7 +74,7 @@ module EmailAddress
 
     def txt(alternate_host=nil)
       Resolv::DNS.open do |dns|
-        records = dns.getresources(alternate_host || self.host_name,
+        records = dns.getresources(alternate_host || self.dns_host_name,
                          Resolv::DNS::Resource::IN::TXT)
         records.empty? ? nil : records.map(&:data).join(" ")
       end
@@ -94,7 +94,7 @@ module EmailAddress
     end
 
     def dmarc
-      self.txt_hash("_dmarc." + self.host_name)
+      self.txt_hash("_dmarc." + self.dns_host_name)
     end
 
   end

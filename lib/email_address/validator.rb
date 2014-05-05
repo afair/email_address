@@ -3,6 +3,8 @@ module EmailAddress
     LEGIBLE_LOCAL_REGEX = /\A[a-z0-9]+(([\.\-\_\'\+][a-z0-9]+)+)?\z/
     DOT_ATOM_REGEX = /[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]/
 
+    attr_reader :errors
+
     def self.validate(address, options={})
       EmailAddress::Validator.new(address, options).valid?
     end
