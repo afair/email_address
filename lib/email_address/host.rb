@@ -72,5 +72,30 @@ module EmailAddress
       DomainMatcher.matches?(@host_name, names.flatten)
     end
 
+    def txt(alternate_host=nil)
+      Resolv::DNS.open do |dns|
+        records = dns.getresources(alternate_host || self.host_name,
+                         Resolv::DNS::Resource::IN::TXT)
+        records.empty? ? nil : records.map(&:data).join(" ")
+      end
+    end
+
+    # Parses TXT record pairs into a hash
+    def txt_hash(alternate_host=nil)
+      fields = {}
+      record = self.txt(alternate_host)
+      return fields unless record
+
+      record.split(/\s*;\s*/).each do |pair|
+        (n,v) = pair.split(/\s*=\s*/)
+        fields[n.to_sym] = v
+      end
+      fields
+    end
+
+    def dmarc
+      self.txt_hash("_dmarc." + self.host_name)
+    end
+
   end
 end

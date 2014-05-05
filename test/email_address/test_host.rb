@@ -40,4 +40,10 @@ class TestHost < MiniTest::Unit::TestCase
     assert_equal :unknown, a.provider
   end
 
+  def test_dmarc
+    d = EmailAddress::Host.new("yahoo.com").dmarc
+    assert_equal 'reject', d[:p]
+    d = EmailAddress::Host.new("example.com").dmarc
+    assert_equal true, d.empty?
+  end
 end
