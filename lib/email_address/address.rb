@@ -47,6 +47,11 @@ module EmailAddress
       normalize
     end
 
+    # The original email address in the request (unmodified).
+    def original
+      @address
+    end
+
     def normalize
       [@local.normalize, @host.normalize].join('@')
     end
