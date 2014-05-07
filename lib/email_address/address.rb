@@ -12,7 +12,7 @@ module EmailAddress
     def parse
       (_, local, host) = @address.match(/\A(.+)@(.+)/).to_a
       @host = EmailAddress::Host.new(host)
-      @local = EmailAddress::Local.new(local, @host.provider)
+      @local = EmailAddress::Local.new(local||@address, @host)
     end
 
     def host

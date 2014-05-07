@@ -8,7 +8,7 @@ class TestAddress < Minitest::Test
     assert_equal "example.com", a.host.to_s
     assert_equal :unknown, a.provider
   end
-  
+
   def test_noramlize
     a = EmailAddress.new("User+tag@Example.com")
     assert_equal "user+tag@example.com", a.normalize
@@ -32,5 +32,10 @@ class TestAddress < Minitest::Test
     a = EmailAddress.new("User+tag@ɹᴉɐℲuǝll∀.ws")
     assert_equal "user@xn--ull-6eb78cvh231oq7gdzb.ws", a.canonical
     assert_equal "9c06226d81149f59b4df32bb426c64a0cbafcea5@xn--ull-6eb78cvh231oq7gdzb.ws", a.obscure
+  end
+
+  def test_no_domain
+    e = EmailAddress.new("User+tag.gmail.ws")
+    assert_equal false, e.valid?
   end
 end

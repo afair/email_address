@@ -22,10 +22,11 @@ module EmailAddress
     # host name -
     #   * full domain name after @ for email types
     #   * fully-qualified domain name
-    # host type - 
+    # host type -
     #   :email - email address domain
     #   :mx    - email exchanger domain
     def initialize(host_name, host_type=:email)
+      host_name||= ''
       @host_name = host_name.downcase
       @host_type = host_type
       parse_host(@host_name)
@@ -34,7 +35,7 @@ module EmailAddress
     def to_s
       @host_name
     end
-      
+
     def parse_host(host)
       @parser = EmailAddress::DomainParser.new(host)
       @parts  = @parser.parts

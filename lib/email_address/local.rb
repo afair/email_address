@@ -24,8 +24,8 @@ module EmailAddress
     ROLE_NAMES = %w(info marketing sales support abuse noc security postmaster
                     hostmaster usenet news webmaster www uucp ftp)
 
-    def initialize(local, provider=nil)
-      @provider = EmailAddress::Config.provider(provider || :default)
+    def initialize(local, host=nil)
+      @provider = EmailAddress::Config.provider(host ? host.provider : :default)
       parse(local)
     end
 
