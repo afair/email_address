@@ -55,7 +55,7 @@ module EmailAddress
 
     # Returns an array of MX IP address (String) for the given email domain
     def mx_ips
-      mxers(domain).map {|m| m[1] }
+      mxers.map {|m| m[1] }
     end
 
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.

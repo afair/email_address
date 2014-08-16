@@ -1,11 +1,11 @@
 module EmailAddress
   ##############################################################################
   # DomainMatcher - Matches a domain to a set of patterns
-  # 
+  #
   # Match Patterns
   #   hostname      sub.domain.tld
   #   domain        domain.tld
-  #   registration  domain 
+  #   registration  domain
   #   tld           .tld, .domain.tld
   ##############################################################################
   class DomainMatcher
@@ -58,7 +58,7 @@ module EmailAddress
 
     # Does "sub.example.com" match ".com" and ".example.com" top level names?
     def tld_matches?(rule)
-      rule.match(/\A\..+\z/) && 
+      rule.match(/\A\..+\z/) &&
         ( @host_name[-rule.size, rule.size] == rule.downcase || ".#{@host_name}" == rule) \
         ? true : false
     end

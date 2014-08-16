@@ -10,8 +10,7 @@ require "email_address/version"
 
 module EmailAddress
 
-  def self.new(address)
-    EmailAddress::Address.new(address)
+  def self.new(email_address)
+    EmailAddress::Address.new(email_address)
   end
-
 end
