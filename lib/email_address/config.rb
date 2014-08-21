@@ -42,6 +42,10 @@ module EmailAddress
       @providers
     end
 
+    #def provider(name, defn={})
+    #  EmailAddress::Config.providers[name] = defn
+    #end
+
     def self.options
       @options
     end

@@ -11,7 +11,7 @@ task :default => :test
 
 desc "Run the Test Suite, toot suite"
 task :test do
-  sh "ruby test/test_*"
+  sh "find test -name 'test*rb' -exec ruby {} \\;"
 end
 
 desc "Open and IRB Console with the gem loaded"

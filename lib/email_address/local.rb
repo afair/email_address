@@ -2,7 +2,7 @@ module EmailAddress
   ##############################################################################
   # EmailAddress Local part consists of
   # - comments
-  # - mailbox 
+  # - mailbox
   # - tag
   #-----------------------------------------------------------------------------
   # Parsing id provider-dependent, but RFC allows:
@@ -12,7 +12,7 @@ module EmailAddress
   # Quote local part or dot-separated sub-parts x."y".z
   # (comment)mailbox | mailbox(comment)
   # 8-bit/UTF-8: allowed but mail-system defined
-  # RFC 5321 also warns that "a host that expects to receive mail SHOULD avoid 
+  # RFC 5321 also warns that "a host that expects to receive mail SHOULD avoid
   #   defining mailboxes where the Local-part requires (or uses) the Quoted-string form".
   # Postmaster: must always be case-insensitive
   # Case: sensitive, but usually treated as equivalent
@@ -70,7 +70,7 @@ module EmailAddress
 
     def format(m)
       m = m.gsub(/([\\\"])/, '\\\1') # Escape \ and "
-      if m =~ /[ \"\(\),:'<>@\[\\\]]/ # Space and "(),:;<>@[\] 
+      if m =~ /[ \"\(\),:'<>@\[\\\]]/ # Space and "(),:;<>@[\]
         m = %Q("#{m}")
       end
       m

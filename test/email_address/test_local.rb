@@ -1,7 +1,7 @@
 # encoding: UTF-8
 require_relative '../test_helper'
 
-class TestLocal < MiniTest::Unit::TestCase
+class TestLocal < MiniTest::Test
   def test_local
     a = EmailAddress::Local.new("TestMonkey")
     assert_equal "testmonkey", a.to_s
@@ -20,7 +20,7 @@ class TestLocal < MiniTest::Unit::TestCase
   end
 
   def test_gmail
-    a = EmailAddress::Local.new("first.last", :google)
+    a = EmailAddress::Local.new("first.last", EmailAddress::Host.new('gmail.com'))
     assert_equal "firstlast", a.canonical
   end
   

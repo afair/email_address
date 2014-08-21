@@ -2,7 +2,7 @@
 require_relative '../test_helper'
 
 
-class TestHost < MiniTest::Unit::TestCase
+class TestHost < MiniTest::Test
   def test_host
     a = EmailAddress::Host.new("example.com")
     assert_equal "example.com", a.host_name
