@@ -35,6 +35,7 @@ module EmailAddress
     def to_s
       @host_name
     end
+    alias :name :to_s
 
     def parse_host(host)
       @parser = EmailAddress::DomainParser.new(host)
