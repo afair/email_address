@@ -32,6 +32,7 @@ module EmailAddress
     end
 
     def validate_email(r,f)
+      return unless r[f]
       e = EmailAddress.new(r[f])
       r.errors[f] << "Email Address Not Valid" unless e.valid?
     end
