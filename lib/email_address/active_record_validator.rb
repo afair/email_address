@@ -7,7 +7,7 @@ module EmailAddress
   # Usage:
   #    validates_with EmailAddress::ActiveRecordValidator, field: :name
   #
-  # Options: 
+  # Options:
   #         field: email,
   #         fields: [:email1, :email2]
   # Default field:
@@ -32,7 +32,7 @@ module EmailAddress
     end
 
     def validate_email(r,f)
-      return unless r[f]
+      return if r[f].nil?
       e = EmailAddress.new(r[f])
       r.errors[f] << "Email Address Not Valid" unless e.valid?
     end

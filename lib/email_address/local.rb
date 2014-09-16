@@ -30,6 +30,7 @@ module EmailAddress
     end
 
     def parse(local)
+      local ||= ''
       @local = local =~ /\A"(.)"\z/ ? $1 : local
       @local.gsub!(/\\(.)/, '\1') # Unescape
       @local.downcase! unless @provider[:case_sensitive]
