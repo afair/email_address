@@ -20,6 +20,7 @@ validator.}
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler", "~> 1.3"
+  spec.add_development_dependency "activemodel", "~> 4.2"
   spec.add_development_dependency "rake"
   spec.add_dependency "simpleidn"
   spec.add_dependency "netaddr"
