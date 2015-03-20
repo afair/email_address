@@ -38,12 +38,17 @@ module EmailAddress
     def rule_matches?(rule)
       rule.downcase!
       @host_name == rule || registration_name_matches?(rule) ||
-        domain_matches?(rule) || tld_matches?(rule)
+        domain_matches?(rule) || tld_matches?(rule) || glob_matches?(rule)
     end
 
     def list_matches?(list)
       list.each {|rule| return true if rule_matches?(rule) }
       false
+    end
+
+    # Matches a rule as a glob match, with * and ? characters
+    def glob_matches?(rule)
+      File.fnmatch?(rule, @host_name)
     end
 
     # Does "sub.example.com" match "example" registration name
