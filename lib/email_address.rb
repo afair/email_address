@@ -5,6 +5,7 @@ require "email_address/domain_parser"
 require "email_address/exchanger"
 require "email_address/host"
 require "email_address/local"
+require "email_address/matcher"
 require "email_address/validator"
 require "email_address/version"
 require "email_address/active_record_validator" if defined?(ActiveModel)

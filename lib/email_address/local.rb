@@ -98,5 +98,10 @@ module EmailAddress
     def role?
       ROLE_NAMES.include?(@mailbox)
     end
+
+    # Mailbox with trailing numbers removed
+    def root_name
+      canonical =~ /\A(.+?)\d+\z/ ? $1 : canonical
+    end
   end
 end

@@ -1,5 +1,8 @@
 module EmailAddress
   ##############################################################################
+  #
+  # DEPRECATING... See EmailAddress::Matcher now
+  #
   # DomainMatcher - Matches a domain to a set of patterns
   #
   # Match Patterns

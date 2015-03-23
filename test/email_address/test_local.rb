@@ -23,5 +23,9 @@ class TestLocal < MiniTest::Test
     a = EmailAddress::Local.new("first.last", EmailAddress::Host.new('gmail.com'))
     assert_equal "firstlast", a.canonical
   end
-  
+
+  def test_root_name
+    a = EmailAddress::Local.new("superman123", EmailAddress::Host.new('gmail.com'))
+    assert_equal "superman", a.root_name
+  end
 end
