@@ -59,7 +59,7 @@ module EmailAddress
 
     def exchanger
       return nil unless @host_type == :email
-      @exchanger = EmailAddress::Exchanger.new(self.dns_host_name)
+      @exchanger = EmailAddress::Exchanger.cached(self.dns_host_name)
     end
 
     def provider

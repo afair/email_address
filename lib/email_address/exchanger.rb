@@ -6,6 +6,20 @@ module EmailAddress
   class Exchanger
     include Enumerable
 
+    def self.cached(host)
+      @host_cache ||= {}
+      @cache_size ||= ENV['EMAIL_ADDRESS_CACHE_SIZE'].to_i || 100
+      if @host_cache.has_key?(host)
+        o = @host_cache.delete(host)
+        @host_cache[host] = o # LRU cache, move to end
+      elsif @host_cache.size >= @cache_size
+        @host_cache.delete(@host_cache.keys.first)
+        @host_cache[host] = new(host)
+      else
+        @host_cache[host] = new(host)
+      end
+    end
+
     def initialize(host, options={})
       @host = host
       @options = options
