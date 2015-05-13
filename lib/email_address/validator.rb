@@ -2,6 +2,7 @@ module EmailAddress
   class Validator
     LEGIBLE_LOCAL_REGEX = /\A[a-z0-9]+(([\.\-\_\'\+][a-z0-9]+)+)?\z/
     DOT_ATOM_REGEX = /[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]/
+    LEVELS = %i(syntax dns)
 
     attr_reader :errors
 
@@ -26,7 +27,9 @@ module EmailAddress
       else
         return false unless valid_local?
       end
-      return invalid(:mx) unless valid_mx? || (valid_dns? && @options[:allow_dns_a])
+      if EmailAddress::Config.options[:check_dns]
+        return invalid(:mx) unless valid_mx? || (valid_dns? && @options[:allow_dns_a])
+      end
       true
     end
 
