@@ -12,7 +12,14 @@ require "email_address/active_record_validator" if defined?(ActiveModel)
 
 module EmailAddress
 
+  # Creates an instance of this email address.
+  # This is a short-cut to Email::Address::Address.new
   def self.new(email_address)
     EmailAddress::Address.new(email_address)
+  end
+
+  # Given an email address, this return true if the email validates, false otherwise
+  def self.valid?(email_address, options={})
+    self.new(email_address).valid?(options)
   end
 end

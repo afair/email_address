@@ -9,4 +9,9 @@ class TestEmailAddress < MiniTest::Test
     assert_equal a.host.to_s, 'example.com'
   end
 
+  def test_valid
+    v = EmailAddress.valid?('user@yahoo.com')
+    assert_equal v, true
+  end
+
 end
