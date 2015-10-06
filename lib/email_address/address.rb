@@ -75,9 +75,10 @@ module EmailAddress
     # Returns the normailed email address according to the provider
     # and system normalization rules. Ususally this downcases the address,
     # removes spaces and comments, but includes any tags.
-    def normalize
+    def normal
       [@local.normalize, @host.normalize].join('@')
     end
+    alias :normalize :normal
 
     # Returns the canonical email address according to the provider
     # uniqueness rules. Usually, this downcases the address, removes
@@ -87,6 +88,7 @@ module EmailAddress
       [@local.canonical, @host.canonical].join('@')
     end
     alias :uniq :canonical
+    alias :canonicalize :canonical
 
     # Returns and MD5 of the canonical address form. Some cross-system systems
     # use the email address MD5 instead of the actual address to refer to the
@@ -94,6 +96,10 @@ module EmailAddress
     # is not known in common.
     def md5
       Digest::MD5.hexdigest(canonical)
+    end
+
+    def canonical_md5
+      Digest::MD5.hexdigest(self.canonical)
     end
 
     # This returns the SHA1 digest (in a hex string) of the canonical email

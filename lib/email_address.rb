@@ -22,4 +22,21 @@ module EmailAddress
   def self.valid?(email_address, options={})
     self.new(email_address).valid?(options)
   end
+
+  # Shortcut to normalize the given email address
+  def self.normal(email_address)
+    EmailAddress::Address.new(email_address).normalize
+  end
+
+  def self.new_normal(email_address)
+    EmailAddress::Address.new(EmailAddress::Address.new(email_address).normalize)
+  end
+
+  def self.canonical(email_address)
+    EmailAddress::Address.new(email_address).normalize
+  end
+
+  def self.new_canonical(email_address)
+    EmailAddress::Address.new(EmailAddress::Address.new(email_address).canonical)
+  end
 end
