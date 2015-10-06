@@ -2,9 +2,8 @@ module EmailAddress
   class Validator
     LEGIBLE_LOCAL_REGEX = /\A[a-z0-9]+(([\.\-\_\'\+][a-z0-9]+)+)?\z/
     DOT_ATOM_REGEX = /[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]/
-    LEVELS = %i(syntax dns)
-
-    attr_reader :errors
+    ERRORS = %i(bad_syntax bad_email bad_mailbox bad_domain bad_exchanger bad_recipient)
+    attr_reader :error
 
     def self.validate(address, options={})
       EmailAddress::Validator.new(address, options).valid?
@@ -16,19 +15,21 @@ module EmailAddress
       @host    = address.host
       @options = options
       @rules   = EmailAddress::Config.provider(@host.provider)
-      @errors  = []
+      @error   = nil
     end
 
+    # Returns true if email address seems valid, false otherwise.
+    # For error, call #error method to get error code (symbol).
     def valid?
       return false unless valid_sizes?
       if @rules[:valid_mailbox] && ! @rules[:valid_mailbox].call(@local.to_s)
         #p ["VALIDATOR", @local.to_s, @rules[:valid_mailbox]]
-        return invalid(:mailbox_validator)
+        return invalid(:bad_mailbox)
       else
         return false unless valid_local?
       end
       if EmailAddress::Config.options[:check_dns]
-        return invalid(:mx) unless valid_mx? || (valid_dns? && @options[:allow_dns_a])
+        return invalid(:bad_exchanger) unless valid_mx? || (valid_dns? && @options[:allow_dns_a])
       end
       true
     end
@@ -36,7 +37,7 @@ module EmailAddress
     def mailbox_validator(v)
       return true unless v
       if v.is_a?(Proc)
-        return invalid(:mailbox_proc) unless @rules[:valid_mailbox].call(@local)
+        return invalid(:bad_mailbox) unless @rules[:valid_mailbox].call(@local)
       elsif v == :legible
         return legible?
       elsif v == :rfc
@@ -61,19 +62,19 @@ module EmailAddress
     end
 
     def valid_sizes?
-      return invalid(:address_size) unless @rules[:address_size].include?(@address.to_s.size)
-      return invalid(:domain_size ) unless @rules[:domain_size ].include?(@host.to_s.size)
-      return invalid(:local_size  ) unless @rules[:local_size  ].include?(@local.to_s.size)
-      return invalid(:mailbox_size) unless @rules[:mailbox_size].include?(@local.mailbox.size)
+      return invalid(:bad_email) unless @rules[:address_size].include?(@address.to_s.size)
+      return invalid(:bad_mailbox) unless @rules[:local_size  ].include?(@local.to_s.size)
+      return invalid(:bad_mailbox) unless @rules[:mailbox_size].include?(@local.mailbox.size)
+      return invalid(:bad_domain ) unless @rules[:domain_size ].include?(@host.to_s.size)
       true
     end
 
     def valid_local?
-      return invalid(:mailbox) unless valid_local_part?(@local.mailbox)
-      return invalid(:comment) unless @local.comment.empty? || valid_local_part?(@local.comment)
+      return invalid(:bad_mailbox) unless valid_local_part?(@local.mailbox)
+      return invalid(:bad_mailbox) unless @local.comment.empty? || valid_local_part?(@local.comment)
       if @local.tag
         @local.tag.split(@rules[:tag_separator]).each do |t|
-          return invalid(:tag, t) unless valid_local_part?(t)
+          return invalid(:bad_mailbox, t) unless valid_local_part?(t)
         end
       end
       true
@@ -86,7 +87,7 @@ module EmailAddress
 
 
     def invalid(reason, *info)
-      @errors << reason
+      @error = reason
       #p "INVALID ----> #{reason} for #{@local.to_s}@#{@host.to_s} #{info.inspect}"
       false
     end
