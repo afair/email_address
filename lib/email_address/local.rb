@@ -71,7 +71,7 @@ module EmailAddress
 
     def format(m)
       m = m.gsub(/([\\\"])/, '\\\1') # Escape \ and "
-      if m =~ /[ \"\(\),:'<>@\[\\\]]/ # Space and "(),:;<>@[\]
+      if m =~ /[ \"\(\),:<>@\[\\\]]/ # Space and "(),:;<>@[\]
         m = %Q("#{m}")
       end
       m
