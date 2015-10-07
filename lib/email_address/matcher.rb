@@ -56,6 +56,7 @@ module EmailAddress
       end
     end
 
+    # Takes a email address string, returns true if it matches a rule
     def include?(email_address)
       self.email = email_address
       return @empty_rules_return if @rules.empty?
@@ -65,7 +66,7 @@ module EmailAddress
         return true if provider_matches?(rule)
         return true if domain_matches?(rule)
         return true if email_matches?(rule)
-        return true if ip_cidr_matches?(rule)
+        #return true if ip_cidr_matches?(rule)
       end
       false
     end
