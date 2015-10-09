@@ -4,7 +4,7 @@ class TestDomainMatcher < MiniTest::Test
 
   def setup
     @matcher = EmailAddress::Matcher.new(
-      ".org example.com domain*.com hotmail. google user*@ root@*.com")
+      ".org example.com domain*.com hotmail. google user*@ root@*.com 207.99.0.0/16")
   end
 
   def test_tld
@@ -34,6 +34,11 @@ class TestDomainMatcher < MiniTest::Test
 
   def test_address
     assert_equal true, @matcher.include?("root@example.com")
+  end
+
+  def test_cidr
+    # If this breaks, check its MX IP addresses against "207.99.0.0/30"
+    assert_equal true, @matcher.include?("test@biglist.com")
   end
 
 end

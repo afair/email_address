@@ -36,7 +36,9 @@ module EmailAddress
     end
 
     def email=(e)
+      e = EmailAddress.new(e) if e.is_a?(String)
       if e.is_a?(EmailAddress::Address)
+        @email_address    = e
         @email            = e.normalize
         @mailbox          = e.mailbox
         @domain           = e.host.name
@@ -48,11 +50,6 @@ module EmailAddress
         @domain           = e[:domain]
         @domain_parts     = EmailAddress::DomainParser.new(@domain).parts
         @provider         = e[:provider]
-      else
-        @email            = e.downcase
-        @mailbox, @domain = @email.split('@')
-        @domain_parts     = EmailAddress::DomainParser.new(@domain).parts
-        @provider         = nil
       end
     end
 
@@ -66,7 +63,7 @@ module EmailAddress
         return true if provider_matches?(rule)
         return true if domain_matches?(rule)
         return true if email_matches?(rule)
-        #return true if ip_cidr_matches?(rule)
+        return true if @email_address && ip_cidr_matches?(rule)
       end
       false
     end
@@ -114,8 +111,8 @@ module EmailAddress
 
     # Does an IP of mail exchanger for "sub.example.com" match "xxx.xx.xx.xx/xx"?
     def ip_cidr_matches?(rule)
-      return false unless rule.match(/\A\d.+\/\d+\z/) && @host.exchanger
-      @host.exchanger.in_cidr?(r) ? true : false
+      return false unless rule.match(/\A\d.+\/\d+\z/) && @email_address.host.exchanger
+      @email_address.host.exchanger.in_cidr?(rule) ? true : false
     end
 
   end

@@ -76,8 +76,8 @@ module EmailAddress
 
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.
     def in_cidr?(cidr)
-      @cidr ||= NetAddr::CIDR.create(cidr)
-      mx_ips.first { |ip| @cider.matches?(ip) } ? true : false
+      @cidr = NetAddr::CIDR.create(cidr)
+      mx_ips.find { |ip| @cidr.matches?(ip) } ? true : false
     end
   end
 end
