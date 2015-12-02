@@ -43,6 +43,7 @@ module EmailAddress
       @host.host_name
     end
     alias :right :host_name
+    alias :hostname :host_name
 
     # Returns the tag part of the local address, or nil if not given.
     def tag
@@ -65,6 +66,10 @@ module EmailAddress
     # Returns the string representation of the normalized email address.
     def to_s
       normalize
+    end
+
+    def inspect
+      "#<EmailAddress::Address:0x#{self.object_id.to_s(16)} normal=\"#{self.normal}\">"
     end
 
     # The original email address in the request (unmodified).
@@ -128,6 +133,10 @@ module EmailAddress
     # of this addres with another, using the normalized form.
     def <=>(other_email)
       normalize <=> other_email.normalize
+    end
+
+    def matches?(*rules)
+      Matcher.new(rules).include?(self)
     end
 
     # Redact the address for storage. To protect the user's privacy,
