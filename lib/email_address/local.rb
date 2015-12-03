@@ -25,6 +25,7 @@ module EmailAddress
                     hostmaster usenet news webmaster www uucp ftp)
 
     def initialize(local, host=nil)
+      @original = local
       @provider = EmailAddress::Config.provider(host ? host.provider : :default)
       parse(local)
     end

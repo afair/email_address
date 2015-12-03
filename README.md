@@ -94,6 +94,12 @@ Here is how the User model works:
 
 #### Validation
 
+The only true validation is to send a message to the email address and
+have the user (or process) verify it has been received. Syntax checks
+help prevent erroneous input. Even sent messages can be silently
+dropped, or bounced back after acceptance. Even conditions such as a
+"Mailbox Full" can mean the email address is known but abandoned.
+
 There are different levels of validations you can perform. By default, it will
 validate to the "Provider" (if known), or "Conventional" format defined as the
 "default" provider. You may pass a a list of parameters to select
@@ -123,7 +129,10 @@ Usually, CHECK_MX is what you want instead.
 the mail server, sends an appropriate HELO, MAIL FROM, and RCPT TO command to determine
 if the email address is accepted, then disconnects. It can be a very slow process,
 cause problems in reputation from your IP address, and may not accurately report
-the non-existence of an email address. In other words: do not do this unless you
+the non-existence of an email address. Additionally, if you have too
+many unknown addresses you are verifying, the remote server could
+classify it as  "dictionary attack" and block you.
+In other words: do not do this unless you
 know exactly what you are doing and the ramifications of it.
 
 Example:

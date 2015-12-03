@@ -83,7 +83,7 @@ module EmailAddress
     def normal
       [@local.normalize, @host.normalize].join('@')
     end
-    alias :normalize :normal
+    alias :conventional :normal
 
     # Returns the canonical email address according to the provider
     # uniqueness rules. Usually, this downcases the address, removes
@@ -125,7 +125,7 @@ module EmailAddress
     # of this addres with another, using the canonical or redacted forms.
     def same_as?(other_email)
       canonical == other_email.canonical ||
-        redact == other_email.canonical || canonical == other_email.redact
+        redact  == other_email.canonical || canonical == other_email.redact
     end
     alias :include? :same_as?
 
@@ -135,6 +135,7 @@ module EmailAddress
       normalize <=> other_email.normalize
     end
 
+    # Address matches one of these Matcher rule patterns
     def matches?(*rules)
       Matcher.new(rules).include?(self)
     end
