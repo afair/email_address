@@ -1,17 +1,3 @@
-require "email_address/address"
-require "email_address/config"
-require "email_address/domain_matcher"
-require "email_address/domain_parser"
-require "email_address/exchanger"
-require "email_address/host"
-require "email_address/local"
-require "email_address/matcher"
-require "email_address/validator"
-require "email_address/version"
-require "email_address/active_record_validator" if defined?(ActiveModel)
-if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
-  require "email_address/email_address_type"
-end
 
 module EmailAddress
   CHECK_CONVENTIONAL_SYNTAX = 1 # Real-word Conventional Syntax
@@ -25,6 +11,22 @@ module EmailAddress
   SYSTEM_MAILBOXES = %w(abuse help mailer-daemon postmaster root)
   ROLE_MAILBOXES   = %w(info sales staff office marketing orders billing
                         careers jobs)
+
+require "email_address/address"
+require "email_address/config"
+require "email_address/domain_matcher"
+require "email_address/domain_parser"
+require "email_address/exchanger"
+require "email_address/host"
+require "email_address/local"
+require "email_address/matcher"
+require "email_address/validator"
+require "email_address/version"
+require "email_address/active_record_validator" if defined?(ActiveModel)
+if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
+  require "email_address/email_address_type"
+  require "email_address/canonical_email_address_type"
+end
 
   # Creates an instance of this email address.
   # This is a short-cut to Email::Address::Address.new

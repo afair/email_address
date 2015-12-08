@@ -65,7 +65,7 @@ module EmailAddress
 
     # Returns the string representation of the normalized email address.
     def to_s
-      normalize
+      normal
     end
 
     def inspect
@@ -81,7 +81,7 @@ module EmailAddress
     # and system normalization rules. Ususally this downcases the address,
     # removes spaces and comments, but includes any tags.
     def normal
-      [@local.normalize, @host.normalize].join('@')
+      [@local.normal, @host.normal].join('@')
     end
     alias :conventional :normal
 
@@ -116,7 +116,7 @@ module EmailAddress
     # Equal matches the normalized version of each address. Use the Threequal to check
     # for match on canonical or redacted versions of addresses
     def ==(other_email)
-      normalize == other_email.normalize
+      normal == other_email.normal
     end
     alias :eql? :==
     alias :equal? :==
@@ -132,7 +132,7 @@ module EmailAddress
     # Return the <=> or CMP comparison operator result (-1, 0, +1) on the comparison
     # of this addres with another, using the normalized form.
     def <=>(other_email)
-      normalize <=> other_email.normalize
+      normal <=> other_email.normal
     end
 
     # Address matches one of these Matcher rule patterns

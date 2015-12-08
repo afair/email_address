@@ -71,10 +71,10 @@ For Rails' ActiveRecord classes, EmailAddress provides an ActiveRecordValidator.
 
 There is also support for an email address type for Active Record 5.0 and above.
 
-First, you need to register the type in `config/initizers/types.rb`
+First, you need to register the type in `config/initializers/types.rb`
 
-    require "email_address/email_address_type"
-    ActiveRecord::Type.register(:email_address, EmailAddress::Address)
+    require "email_address"
+    ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
     ActiveRecord::Type.register(:canonical_email_address,
                                 EmailAddress::CanonicalEmailAddressType)
 

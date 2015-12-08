@@ -23,7 +23,7 @@ module EmailAddress
       if @opt[:fields]
         @opt[:fields].each {|f| validate_email(r, f) }
       elsif @opt[:field]
-        validate_email(r, opt[:field])
+        validate_email(r, @opt[:field])
       elsif r.respond_to? :email
         validate_email(r, :email)
       elsif r.respond_to? :email_address
