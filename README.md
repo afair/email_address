@@ -32,10 +32,16 @@ and also has helper to do easy transformations. See the definitions of the
 email address forms later in this README for a better understanding of rules
 used in this library.
 
+These top-level helpers return edited email addresses and validation
+check.
+
     address = "Clark.Kent+scoops@gmail.com"
     EmailAddress.valid?(address)    #=> true
     EmailAddress.normal(address)    #=> "clark.kent+scoops@gmail.com"
     EmailAddress.canonical(address) #=> "clarkkent@gmail.com"
+    EmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
+
+Or you can create an instance of the email address to work with it.
 
     email = EmailAddress.new(address) #=> #<EmailAddress::Address:0x007fe6ee150540 ...>
     email.to_s          #=> "clark.kent+scoops@gmail.com"
@@ -45,7 +51,7 @@ used in this library.
     email.valid?        #=> true
     email.errors        #=> []
 
-#### Advanced Usage
+Here are some other methods that are available.
 
     email.redact        #=> "bea3f3560a757f8142d38d212a931237b218eb5e@gmail.com"
     email.sha1          #=> "bea3f3560a757f8142d38d212a931237b218eb5e"
@@ -61,7 +67,41 @@ used in this library.
     EmailAddress.normal("HIRO@こんにちは世界.com")
                         #=> "hiro@xn--28j2a3ar1pp75ovm7c.com"
 
-### Rails (ActiveRecord) Usage
+### Configuration
+
+You can pass an options hash on the `.new()` and helper class methods to
+control how the library treats that address. These can also be
+configured during initialization by provider and default (see below).
+
+    EmailAddress.new("clark.kent@gmail.com", {
+      local_downcase:     true || false,
+      local_encoding:     :ascii || :unicode,
+      local_edit:         true || false,
+      local_validation:   :provider || :conventional || :standard || :none ||
+                          ->(local) { [] },
+      local_size:         1..64,
+      local_mailbox:      ->(local) { local.downcase.split("+").first },
+      local_tag:          ->(local) { local.downcase.split("+")[1] },
+      tag_separator:      '+' || false,
+      mailbox_canonical:  ->(local) { local.downcase.split("+").first },
+      mailbox_size:       1..64, # without tag
+      host_encoding:      :punycode || :unicode,
+      host_validation:    :syntax || :dns || :mx || :connect,
+      host_size:          1..253,
+      address_validation: :parts, :smtp, ->(email) { [] },
+      address_size:       3..254,
+    })
+
+You can add special rules by domain or provider. It takes the options
+above and adds the :domain_match and :exchanger_match rules.
+
+    EmailAddress.define_provider('google',
+      domain_match:      %w(gmail.com googlemail.com),
+      exchanger_match:   %w(google.com),
+      local_size:        5..64,
+      mailbox_canonical: ->(m) {m.gsub('.','')})
+
+#### Rails Validator
 
 For Rails' ActiveRecord classes, EmailAddress provides an ActiveRecordValidator.
 
@@ -69,7 +109,9 @@ For Rails' ActiveRecord classes, EmailAddress provides an ActiveRecordValidator.
       validates_with EmailAddress::ActiveRecordValidator, field: :email
     end
 
-There is also support for an email address type for Active Record 5.0 and above.
+#### Rails Email Address Type Attribute
+
+Initial support is provided for Active Record 5.0 and above.
 
 First, you need to register the type in `config/initializers/types.rb`
 
@@ -97,35 +139,52 @@ Here is how the User model works:
 The only true validation is to send a message to the email address and
 have the user (or process) verify it has been received. Syntax checks
 help prevent erroneous input. Even sent messages can be silently
-dropped, or bounced back after acceptance. Even conditions such as a
-"Mailbox Full" can mean the email address is known but abandoned.
+dropped, or bounced back after acceptance.  Conditions such as a
+"Mailbox Full" can mean the email address is known, but abandoned.
 
 There are different levels of validations you can perform. By default, it will
 validate to the "Provider" (if known), or "Conventional" format defined as the
 "default" provider. You may pass a a list of parameters to select
 which syntax and network validations to perform.
 
-* CHECK_PROVIDER_SYNTAX: Syntax rules by each email provider. If not defined, it
+Local Validation Option:
+
+* **:provider** - Uses Syntax rules by for the email provider. If not defined, it
 invokes either Conventional or Standard formats as configured.
-* CHECK_CONVENTIONAL_SYNTAX: Real-word, Conventional Syntax. This is usually the
-format you want.
-* CHECK_STANDARD_SYNTAX: RFC-Compliant Syntax. This is usually not what you want,
+If the provider can be detected by the host name, a specialied rule can
+be applied, otherwise it validates as Conventional. _Default._
+* **:conventional** - Real-word, Conventional Syntax.
+This is usually the format you want.
+* **Standard** - RFC-Compliant Syntax. This is usually not what you want,
 and can allow garbage email addresses to validate.
-* CHECK_DNS: Perform DNS A-Record lookup on domain. Some mis-configured domains
+* **:none** - Skip local validation. Useful if you are using another
+  service to validate the email address.
+
+Host Validation Option:
+
+* **:syntax** - Conforms to standard domain name syntax. International
+  Domain Names are converted to Punycode. _Default._
+* **:dns** - Perform DNS A-Record lookup on domain. Some mis-configured domains
 just set up a DNS "A" record and not an "MX" record even though the "A" host
 accepts email.
 DNS checks will take longer, especially if the domain is not registered.
-* CHECK_MX: Perform DNS MX-Record lookup on domain. Require that a MX server
+* **:mx** - Perform DNS MX-Record lookup on domain. Require that a MX server
 must be configured for the domain.
 DNS checks will take longer, especially if the domain is not registered.
-* CHECK_CONNECT: Attempt connection to remote mail server. This could be a slow
+This is usually what you want, unless DNS lookups slow down your
+processing.
+* **:connect** - Attempt connection to remote mail server. This could be a slow
 operation, as it must perform the DNS lookup, then attempt to connect to a remote
 server that may be greylisting your connection, especially if it detects too many
 bogus connections originating from your IP address.
 Most servers will not accept connections from dynamically assigned IP addresses
 such as home networks and shared hosting environments like AWS.
-Usually, CHECK_MX is what you want instead.
-* CHECK_SMTP: Perform SMTP email verification. Performs a DNS lookup, connects to
+
+Address Validation Option:
+
+* **:parts** -  Validate the Local and Host parts only. This is usually
+  what you want. _Default._
+* **:smtp** - Perform SMTP email verification. Performs a DNS lookup, connects to
 the mail server, sends an appropriate HELO, MAIL FROM, and RCPT TO command to determine
 if the email address is accepted, then disconnects. It can be a very slow process,
 cause problems in reputation from your IP address, and may not accurately report
@@ -134,11 +193,21 @@ many unknown addresses you are verifying, the remote server could
 classify it as  "dictionary attack" and block you.
 In other words: do not do this unless you
 know exactly what you are doing and the ramifications of it.
+* **:external_name or Proc** -  a predefined symbol or a proc accepting an email address string and
+returning an array of error messages (empty if valid).
+This Allows you to invoke custom code intended to call
+out to an external email address validation service. This could be
+wrapped into a plugin gem named like "email\_address-*servicename*"
+which defines a method name specified as a symbol.
+This is not called if the address fails local host validation.
 
-Example:
+The validation (and errors) check takes a hash of validation options
+for :local, :host, and :address. Each can override with a given symbol
+name matching the rules defined above, or a callable code block. The
+block must return an array of error messages, which would be empty if
+valid.
 
-    EmailAddress.valid?(address, EmailAddress::CHECK_CONVENTIONAL_SYNTAX,
-                        EmailAddress::CHECK_DNS)
+    EmailAddress.valid?(address, local: :provider, host: :mx, address: :parts)
 
 #### Comparison
 
@@ -171,13 +240,13 @@ Matching addresses by simple patterns:
 
 Usage:
 
-    e1 = EmailAddress.new("Clark.Kent@Gmail.com")
-    e1.matches?("gmail.com") #=> true
-    e1.matches?("google")    #=> true
-    e1.matches?(".org")      #=> false
-    e1.matches?("g*com")     #=> true
-    e1.matches?("gmail.")    #=> true
-    e1.matches?("*kent*@")   #=> true
+    e = EmailAddress.new("Clark.Kent@Gmail.com")
+    e.matches?("gmail.com") #=> true
+    e.matches?("google")    #=> true
+    e.matches?(".org")      #=> false
+    e.matches?("g*com")     #=> true
+    e.matches?("gmail.")    #=> true
+    e.matches?("*kent*@")   #=> true
 
 ## Email Addresses
 
@@ -185,6 +254,19 @@ Usage:
 
 Most of these terms were created during implemtation of this library and are
 not (yet) industry standard terms.
+
+The email address consists of the **local** part, the '@' symbol, and the
+**host** name.
+
+The local part is usually the user, mailbox, or role accont
+name. Some MTA's support an optional tag, usually after a "+" or other
+pre-defined symbol, which the user can specify anything to filter
+or sort incomgng mail. This can also be used to create unique email
+addresses that resolve to the main account.
+
+The host name is the domain name or subdomain that resolves to an IP
+Address from the DNS MX (Mail Exchanger) record. That IP should receive
+email messages on port 25 over SMTP.
 
 **Original**: email address is of the format given by the user.
 
@@ -206,7 +288,7 @@ This keeps the "Bad Parts" as described later.
 
 **Normal**: Email Address is converted the the configured format.
 This format is what should be used to identify the account.
-
+This is the format supported by the email service provider.
 
 **Canonical**: Used to uniquely identify the mailbox.
 Useful for locating a user who forgets registering with a tag or
@@ -226,14 +308,20 @@ from your database and still maintain the state of the account.
   * Format: sha1(canonical_address)@domain
   * Given an email address, the record can be found
 
- **Reference**: These forms allows you to publicly share an address without
+**Reference**: These form allows you to publicly interchange an address without
 revealing the actual address. While these digests are not guaranteed to be unique,
 they are industry standard methods of providing matching addresses without
-opening them sup to harvesting.
+opening them up to harvesting. Use this in applications asking external
+services "Do you know this email address?" or "Remove this email address
+from your database" where providing the actual address compromises the
+address if it is not known to the external service.
 
-  * Can be the **MD5** or **SHA1** of the normalized or canonical address
+  * Can be the **MD5** (_default_) or **SHA1** of the normalized or canonical address
   * Useful for "do not email" lists
   * Useful for cookies that do not reveal the actual account
+  * Can be used to represent an alternate recipient identifier
+    in an email message to identify the email address in bounces or FBL
+    messages where the actual email address is redacted or munged for privacy.
 
 **Provider**: The name of the service providing the email either an Email Service Provider (Yahoo, Google, MSN), or ISP (Internet Service Provider) such as a
 Cable TV or Telephone company.

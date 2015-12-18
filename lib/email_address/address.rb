@@ -102,6 +102,7 @@ module EmailAddress
     def md5
       Digest::MD5.hexdigest(canonical)
     end
+    alias :reference :md5
 
     def canonical_md5
       Digest::MD5.hexdigest(self.canonical)

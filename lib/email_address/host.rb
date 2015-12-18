@@ -47,6 +47,15 @@ module EmailAddress
     def dns_host_name
       @dns_host_name ||= ::SimpleIDN.to_ascii(@host_name)
     end
+    alias :punycode :dns_host_name
+
+    def unicode
+      if @host_name.include?("--")
+        ::SimpleIDN.to_unicode(@host_name)
+      else
+        @host_name
+      end
+    end
 
     def normalize
       dns_host_name

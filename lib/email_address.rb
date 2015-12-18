@@ -48,11 +48,19 @@ end
     EmailAddress::Address.new(EmailAddress::Address.new(email_address).normalize)
   end
 
+  # Returns the Canonical form of the email address. This form is what should
+  # be considered unique for an email account, lower case, and no address tags.
   def self.canonical(email_address)
     EmailAddress::Address.new(email_address).canonical
   end
 
   def self.new_canonical(email_address)
     EmailAddress::Address.new(EmailAddress::Address.new(email_address).canonical)
+  end
+
+  # Returns the Reference form of the email address, defined as the MD5
+  # digest of the Canonical form.
+  def self.reference(email_address)
+    EmailAddress::Address.new(email_address).reference
   end
 end
