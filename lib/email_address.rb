@@ -1,16 +1,22 @@
 
 module EmailAddress
-  CHECK_CONVENTIONAL_SYNTAX = 1 # Real-word Conventional Syntax
-  CHECK_STANDARD_SYNTAX     = 2 # RFC-Compliant Syntax
-  CHECK_PROVIDER_SYNTAX     = 3 # Syntax rules by email provider
-  CHECK_DNS                 = 4 # Perform DNS A-Record ookup on domain
-  CHECK_MX                  = 5 # Perform DNS MX-Record lookup on domain
-  CHECK_CONNECT             = 6 # Attempt connection to remote mail server
-  CHECK_SMTP                = 7 # Perform SMTP email verification
+  #CHECK_CONVENTIONAL_SYNTAX = 1 # Real-word Conventional Syntax
+  #CHECK_STANDARD_SYNTAX     = 2 # RFC-Compliant Syntax
+  #CHECK_PROVIDER_SYNTAX     = 3 # Syntax rules by email provider
+  #CHECK_DNS                 = 4 # Perform DNS A-Record ookup on domain
+  #CHECK_MX                  = 5 # Perform DNS MX-Record lookup on domain
+  #CHECK_CONNECT             = 6 # Attempt connection to remote mail server
+  #CHECK_SMTP                = 7 # Perform SMTP email verification
 
   SYSTEM_MAILBOXES = %w(abuse help mailer-daemon postmaster root)
   ROLE_MAILBOXES   = %w(info sales staff office marketing orders billing
                         careers jobs)
+  # RFC-2142
+  BUSINESS_MAILBOXES = %w(info marketing sales support)
+  NETWORK_MAILBOXES  = %w(abuse noc security)
+  SERVICE_MAILBOXES  = %w(postmaster hostmaster usenet news webmaster www uucp ftp)
+  SYSTEM_MAILBOXES   = %w(help mailer-daemon root) # Not from RFC-2142
+  ROLE_MAILBOXES     = %w(staff office orders billing careers jobs) # Not from RFC-2142
 
 require "email_address/address"
 require "email_address/config"

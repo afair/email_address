@@ -3,6 +3,10 @@
 [![Gem Version](https://badge.fury.io/rb/email_address.svg)](http://rubygems.org/gems/email_address)
 
 This gem provides a ruby language library for working with and validating email addresses.
+By default, it validates against conventionial usage,
+the format preferred for user email addresses.
+It can be configured to validate against RFC "Standard" formats,
+common email service provider formats, and perform DNS validation.
 
 ## Installation With Rails or Bundler
 
@@ -73,33 +77,58 @@ You can pass an options hash on the `.new()` and helper class methods to
 control how the library treats that address. These can also be
 configured during initialization by provider and default (see below).
 
-    EmailAddress.new("clark.kent@gmail.com", {
+    EmailAddress.new("clark.kent@gmail.com",
+      dns_lookup:         :mx || :a || :off, # Global/Request setting
+
       local_downcase:     true || false,
+      local_fix:          true || false,
       local_encoding:     :ascii || :unicode,
-      local_edit:         true || false,
-      local_validation:   :provider || :conventional || :standard || :none ||
-                          ->(local) { [] },
+      local_parse:        true || false || ->(local) { "edited" }
+      local_validation:   :provider || :conventional || :standard || ->(local) { true } || :none
+      local_format:       :provider || :conventional || :standard ->(local) { "formatted" }
       local_size:         1..64,
-      local_mailbox:      ->(local) { local.downcase.split("+").first },
-      local_tag:          ->(local) { local.downcase.split("+")[1] },
+      local_mailbox:      ->(ea) { ea.local.downcase.split("+").first },
       tag_separator:      '+' || false,
       mailbox_canonical:  ->(local) { local.downcase.split("+").first },
       mailbox_size:       1..64, # without tag
+
       host_encoding:      :punycode || :unicode,
-      host_validation:    :syntax || :dns || :mx || :connect,
+      host_validation:    :conventional || :mx || :a || :standard || :connect,
       host_size:          1..253,
-      address_validation: :parts, :smtp, ->(email) { [] },
+      host_allow_ip:      false || true,
+
+      address_validation: :parts || :smtp || :external_name || ->(ea) { [] },
       address_size:       3..254,
-    })
+    )
 
 You can add special rules by domain or provider. It takes the options
 above and adds the :domain_match and :exchanger_match rules.
 
     EmailAddress.define_provider('google',
       domain_match:      %w(gmail.com googlemail.com),
-      exchanger_match:   %w(google.com),
+      exchanger_match:   %w(google.com), # Requires dns_lookup==:mx
       local_size:        5..64,
       mailbox_canonical: ->(m) {m.gsub('.','')})
+
+The library ships with the most common set of provider rules. It is not meant
+to house a database of all providers, but a separate `email_address-providers`
+gem may be created to hold this data for those who need more complete rules.
+
+Personal and Corporate email systems are not intended for either solution.
+Any of these email systems may be configured locally.
+
+Pre-configured email address providers include: Google (gmail), AOL, MSN
+(hotmail, live, outlook), and Yahoo. Any address not matching one of
+those patterns use the "default" provider rule set. Exchanger matches
+matches against the Mail Exchanger (SMTP receivers) hosts defined in
+DNS. If you specify an exchanger pattern, but requires a DNS MX lookup.
+
+You can change configuration options and add new providers such as:
+
+    EmailAddress::Config.setup do
+      provider :github, domains:%w(github.com github.io)
+      option   :check_dns, false
+    end
 
 #### Rails Validator
 
@@ -282,16 +311,17 @@ specification. This is the format this library supports by default.
 **Standard**: Follows the RFC specifications for email addresses.
 This keeps the "Bad Parts" as described later.
 
-  * Local parts are kept without editing.
-  * Domain names are converted to lower case.
-  * International Domain Names (IDN) converted to punycode.
+  * More characters available in local part, any order (except
+    for consecutive "..")
+  * Double-Quoted local part for an extended character set
+  * Domain names are normalized (lower-case, punycode for International Domain Names (IDN).
 
-**Normal**: Email Address is converted the the configured format.
-This format is what should be used to identify the account.
-This is the format supported by the email service provider.
+**Relaxed**: A relaxed Standard format. Essentially Standard
+form without the the Quoted extension, and a few less dangerous
+characers.
 
 **Canonical**: Used to uniquely identify the mailbox.
-Useful for locating a user who forgets registering with a tag or
+Useful for locating a user who forget registering with a tag or
 with a "Bad part" in the email address.
 
   * Based on the Conventional form.
@@ -425,22 +455,6 @@ instance has been provided.
 ## Customizing
 
 See `lib/email_address/config.rb` for more options.
-
-#### Adding Rules for a new Email Service Provider
-
-The library ships with the most common set of provider rules. It is not meant
-to house a database of all providers, but a separate `email_address-providers`
-gem may be created to hold this data for those who need complete rules.
-
-Personal and Corporate email systems are not intended for either solution.
-Any of these email systems may be configured locally.
-
-You can change configuration options and add new providers such as:
-
-    EmailAddress::Config.setup do
-      provider :github, domains:%w(github.com github.io)
-      option   :check_dns, false
-    end
 
 ## Contributing
 
