@@ -73,15 +73,21 @@ module EmailAddress
                          SYSTEM_MAILBOXES + ROLE_MAILBOXES
 
     # Conventional : word([.-+'_]word)*
-    CONVENTIONAL_MAILBOX_REGEX = /\A[a-z0-9]+([\.\-\+\'_][a-z0-9])*\z/
+    CONVENTIONAL_MAILBOX_REGEX = /\A[\p{L}\p{N}]+([\.\-\+\'_][\p{L}\p{N}]+)*\z/
     # RFC5322 Non-Quoted: [ALPHA DIGIT ! # $ % & ' * + - / = ? ^ _ ` { | } ~]+
-    STANDARD_MAILBOX_REGEX = /\A[a-z0-9\.\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~]+\z/
+    STANDARD_MAILBOX_REGEX = /\A[\p{L}\p{N}\.\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+\z/
     # RFC5322 Quoted: "( \[\ " ] | [( ) < > [ ] : ; @ , .] | SPACE | STANDARD_MAILBOX_CHARACTERS)+"
     STANDARD_QUOTED_MAILBOX_REGEX =
-      /\A\"(\\[\\\"]|[\(\)\<\>\[\]\:\;\@\\,\.]|[ a-z0-9\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~])+\"z/
+      /\A \" ( \\[\" \\]
+             | [\( \) < > \[ \] : ; @ , \.
+                \x20 \p{L} \p{N} ! # \$ % & ' \* \+ \- \/ = \? \^ _ ` \{ \| \} ~] )+
+          \" \z/x
 
     STANDARD_MAX_SIZE = 64
 
+    # local config options:
+    #   local_downcase, local_encoding, local_parse local_size tag_separator
+    #   mailbox_canonical, mailbox_size
     def initialize(local, config={})
       self.config   = config
       self.local    = local
@@ -130,9 +136,11 @@ module EmailAddress
     end
 
     def ascii?
+      ! self.unicode?
     end
 
     def unicode?
+      self.local =~ /[^\p{InBasic_Latin}]/ ? true : false
     end
 
     def special?
@@ -215,10 +223,18 @@ module EmailAddress
     # Validations
     ############################################################################
 
-    # local_downcase, local_encoding, local_parse, local_validation
-    # local_size local_mailbox local_tag tag_separator mailbox_canonical, mailbox_size
-    def valid?
-
+    def valid?(format=@config[:local_format]||:conventional)
+      if format.is_a?(Proc)
+        format.call(self)
+      elsif format == :conventional
+        self.conventional?
+      elsif format == :relaxed
+        self.relaxed?
+      elsif format == :standard
+        self.standard?
+      else
+        raise "Unknown format #{format}"
+      end
     end
 
     def format?
@@ -235,17 +251,16 @@ module EmailAddress
     end
 
     def valid_size?
-      if @config[:local_size]
-        @config[:local_size] > self.local.size
-      elsif self.local.size <= STANDARD_MAX_SIZE
-        true
-      else
-        false
-      end
+      return false if @config[:local_size] && @config[:local_size] < self.local.size
+      return false if @config[:mailbox_size] && @config[:mailbox_size] < self.mailbox.size
+      return false if self.local.size > STANDARD_MAX_SIZE
+      true
     end
 
-    def valid_encoding?
-      self.unicode? && @config[:local_encoding] == :ascii
+    def valid_encoding?(enc=@config[:local_encoding]||:ascii)
+      return false if enc == :ascii && self.unicode?
+      return false if enc == :unicode && self.ascii?
+      true
     end
 
     def conventional?
@@ -260,8 +275,9 @@ module EmailAddress
     # Relaxed conventional is Standard, without Quoted form and allows ".."
     def relaxed?
       self.syntax = :invalid
+      self.valid_size? or return false
       self.valid_encoding? or return false
-      if self.local =~ STANDARD_MAILBOX_REGEX && self.valid_size?
+      if self.local =~ STANDARD_MAILBOX_REGEX
         self.syntax = :standard
         true
       else
@@ -273,7 +289,7 @@ module EmailAddress
       self.syntax = :invalid
       self.valid_size? or return false
       self.valid_encoding? or return false
-      if self.relaxed_standard?
+      if self.relaxed?
         if self.local.include?("..") # Not allowed
           self.syntax = :invalid
           false

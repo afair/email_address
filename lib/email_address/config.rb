@@ -3,7 +3,7 @@ module EmailAddress
     @options = {
        downcase_mailboxes: true,
        check_dns:          true,
-       default_format:     EmailAddress::CHECK_CONVENTIONAL_SYNTAX,
+       #default_format:     EmailAddress::CHECK_CONVENTIONAL_SYNTAX,
     }
 
     @providers = {
