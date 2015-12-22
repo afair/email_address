@@ -10,6 +10,8 @@ module EmailAddress
   # Quoted: space ( ) , : ; < > @ [ ]
   # Quoted-Backslash-Escaped: \ "
   # Quote local part or dot-separated sub-parts x."y".z
+  # RFC-5321 warns "a host that expects to receive mail SHOULD avoid defining mailboxes
+  #     where the Local-part requires (or uses) the Quoted-string form".
   # (comment)mailbox | mailbox(comment)
   # . can not appear at beginning or end, or appear consecutively
   # 8-bit/UTF-8: allowed but mail-system defined
@@ -81,16 +83,27 @@ module EmailAddress
     # Relaxed: same characters, relaxed order
     RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}]+ ( [\.\-\+\'_]+ [\p{L}\p{N}]+ )* \z/x
 
-    # RFC5322 Non-Quoted: [ALPHA DIGIT ! # $ % & ' * + - / = ? ^ _ ` { | } ~]+
-    STANDARD_MAILBOX_REGEX = /\A[\p{L}\p{N}\.\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+\z/
+    # RFC5322 Non-Quoted: ALPHA DIGIT ! # $ % & ' * + - / = ? ^ _ ` { | } ~
+    #STANDARD_MAILBOX_REGEX = /\A[\p{L}\p{N}\.\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~]+\z/
+
+    # RFC5322 Token: token."token".token (dot-separated tokens)
+    #   Quoted Token can also have: SPACE \" \\ ( ) , : ; < > @ [ \ ] .
+    STANDARD_TOKEN_REGEX =
+      /\A
+          ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
+            | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" )
+          ( \.  ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
+                  | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" ) )*
+       \z/x
 
     # RFC5322 Quoted: "( \[\ " ] | [( ) < > [ ] : ; @ , .] | SPACE | STANDARD_MAILBOX_CHARACTERS)+"
-    STANDARD_QUOTED_MAILBOX_REGEX =
-      /\A \" ( \\[\" \\]
-             | [\( \) < > \[ \] : ; @ , \.
-                \x20 \p{L} \p{N} ! # \$ % & ' \* \+ \- \/ = \? \^ _ ` \{ \| \} ~] )+
-          \" \z/x
+    #STANDARD_QUOTED_MAILBOX_REGEX =
+    #  /\A \" ( \\[\" \\]
+    #         | [\( \) < > \[ \] : ; @ , \.
+    #            \x20 \p{L} \p{N} ! # \$ % & ' \* \+ \- \/ = \? \^ _ ` \{ \| \} ~] )+
+    #      \" \z/x
 
+    REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
     STANDARD_MAX_SIZE = 64
 
     # local config options:
@@ -121,6 +134,7 @@ module EmailAddress
         raw.gsub!(/\\(.)/, '\1') # Unescape
       elsif @config[:local_fix]
         raw.gsub!(' ','')
+        raw.gsub!(',','.')
         raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
       end
       (raw, comment) = self.parse_comment(raw)
@@ -129,14 +143,16 @@ module EmailAddress
     end
 
     # "(comment)mailbox" or "mailbox(comment)", only one comment
+    # RFC Doesn't say what to do if 2 comments occur, so last wins
     def parse_comment(raw)
+      c = nil
       if raw =~ /\A\((.+?)\)(.+)\z/
-        [$2, $1]
-      elsif raw =~ /\A(.+)\((.+?)\)\z/
-        [$1, $2]
-      else
-        [raw, nil]
+        c, raw = [$2, $1]
       end
+      if raw =~ /\A(.+)\((.+?)\)\z/
+        raw, c = [$1, $2]
+      end
+      [raw, c]
     end
 
     def parse_tag(raw)
@@ -150,6 +166,14 @@ module EmailAddress
 
     def unicode?
       self.local =~ /[^\p{InBasic_Latin}]/ ? true : false
+    end
+
+    def redacted?
+      self.local =~ REDACTED_REGEX
+    end
+
+    def self.redacted?(local)
+      local =~ REDACTED_REGEX
     end
 
     def special?
@@ -239,6 +263,8 @@ module EmailAddress
         self.conventional?
       elsif format == :relaxed
         self.relaxed?
+      elsif format == :redacted
+        self.redacted?
       elsif format == :standard
         self.standard?
       elsif format == :none
@@ -254,6 +280,8 @@ module EmailAddress
         :conventional
       elsif self.relaxed?
         :relax
+      elsif self.redacted?
+        :redacted
       elsif self.standard?
         :standard
       else
@@ -300,16 +328,17 @@ module EmailAddress
       self.syntax = :invalid
       self.valid_size? or return false
       self.valid_encoding? or return false
-      if self.local =~ STANDARD_MAILBOX_REGEX
-        if self.local.include?("..") # Not allowed
-          self.syntax = :invalid
-          false
-        else
-          self.syntax = :standard
-          true
-        end
-      elsif self.local =~ STANDARD_QUOTED_MAILBOX_REGEX
-        self.syntax = :standard_quoted
+      #if self.local =~ STANDARD_MAILBOX_REGEX
+      #  if self.local.include?("..") # Not allowed
+      #    self.syntax = :invalid
+      #    false
+      #  else
+      #    self.syntax = :standard
+      #    true
+      #  end
+      ##elsif self.local =~ STANDARD_QUOTED_MAILBOX_REGEX
+      if self.local =~ STANDARD_TOKEN_REGEX
+        self.syntax = :standard
         true
       else
         false

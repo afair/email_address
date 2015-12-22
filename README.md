@@ -44,6 +44,7 @@ check.
     EmailAddress.normal(address)    #=> "clark.kent+scoops@gmail.com"
     EmailAddress.canonical(address) #=> "clarkkent@gmail.com"
     EmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
+    EmailAddress.redact(address)    #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
 
 Or you can create an instance of the email address to work with it.
 
@@ -57,7 +58,7 @@ Or you can create an instance of the email address to work with it.
 
 Here are some other methods that are available.
 
-    email.redact        #=> "bea3f3560a757f8142d38d212a931237b218eb5e@gmail.com"
+    email.redact        #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
     email.sha1          #=> "bea3f3560a757f8142d38d212a931237b218eb5e"
     email.md5           #=> "c5be3597c391169a5ad2870f9ca51901"
     email.host_name     #=> "gmail.com"
@@ -249,7 +250,7 @@ You can compare email addresses:
     e3 = EmailAddress.new(e2.redact)
     e1.to_s           #=> "clark.kent@gmail.com"
     e2.to_s           #=> "clark.kent+superman@gmail.com"
-    e3.to_s           #=> "bea3f3560a757f8142d38d212a931237b218eb5e@gmail.com"
+    e3.to_s           #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
 
     e1 == e2          #=> false (Matches by normalized address)
     e1.same_as?(e2)   #=> true  (Matches as canonical address)
@@ -341,7 +342,7 @@ as sensitive data and complying with requests to remove the address
 from your database and still maintain the state of the account.
 
 
-  * Format: sha1(canonical_address)@domain
+  * Format: "{" + sha1(canonical_address) + "}" + @domain
   * Given an email address, the record can be found
 
 **Reference**: These form allows you to publicly interchange an address without

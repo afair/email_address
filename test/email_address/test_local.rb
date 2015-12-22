@@ -15,6 +15,8 @@ class TestLocal < MiniTest::Test
       %Q{" "},
       %Q{"very.(),:;<>[]\\".VERY.\\"very@\\ \\"very\\".unusual"},
       %Q{"()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a"},
+      %{token." ".token},
+      %{abc."defghi".xyz},
     ].each do |local|
       assert EmailAddress::Local.new(local).standard?, local
     end
@@ -30,6 +32,7 @@ class TestLocal < MiniTest::Test
       %Q{john..doe},
       %Q{ invalid},
       %Q{invalid },
+      %Q{abc"defghi"xyz},
     ].each do |local|
       assert ! EmailAddress::Local.new(local).standard?, local
     end
@@ -70,6 +73,12 @@ class TestLocal < MiniTest::Test
     assert_equal :conventional, EmailAddress::Local.new("can1").format?
     assert_equal :standard, EmailAddress::Local.new(%Q{"can1"}).format?
     assert_equal "can1", EmailAddress::Local.new(%Q{"can1(commment)"}).format(:conventional)
+  end
+
+  def test_redacted
+    l = "{bea3f3560a757f8142d38d212a931237b218eb5e}"
+    assert EmailAddress::Local.redacted?(l), "redacted? #{l}"
+    assert_equal :redacted, EmailAddress::Local.new(l).format?
   end
 
 end
