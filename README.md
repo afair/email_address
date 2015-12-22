@@ -84,7 +84,7 @@ configured during initialization by provider and default (see below).
       local_fix:          true || false,
       local_encoding:     :ascii || :unicode,
       local_parse:        true || false || ->(local) { "edited" }
-      local_validation:   :provider || :conventional || :standard || ->(local) { true } || :none
+      local_validation:   :provider || :conventional || :relaxed || :standard || ->(local) { true } || :none
       local_format:       :provider || :conventional || :standard ->(local) { "formatted" }
       local_size:         1..64,
       local_mailbox:      ->(ea) { ea.local.downcase.split("+").first },
@@ -184,7 +184,9 @@ If the provider can be detected by the host name, a specialied rule can
 be applied, otherwise it validates as Conventional. _Default._
 * **:conventional** - Real-word, Conventional Syntax.
 This is usually the format you want.
-* **Standard** - RFC-Compliant Syntax. This is usually not what you want,
+* **:relaxed** - A relaxed version of conventional. Use this if you find
+that format too strict for you.
+* **:standard** - RFC-Compliant Syntax. This is usually not what you want,
 and can allow garbage email addresses to validate.
 * **:none** - Skip local validation. Useful if you are using another
   service to validate the email address.
@@ -307,6 +309,10 @@ specification. This is the format this library supports by default.
   * Tags are kept as they are important for the user.
   * Remove comments and any "bad parts".
   * International Domain Names (IDN) converted to punycode.
+
+**Relaxed**: Like conventional, but not strict about character order.
+If you find you are processing a lot of eccentric email addresses, this
+may be your format for the default provider.
 
 **Standard**: Follows the RFC specifications for email addresses.
 This keeps the "Bad Parts" as described later.

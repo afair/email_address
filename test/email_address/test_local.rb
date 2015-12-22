@@ -35,6 +35,13 @@ class TestLocal < MiniTest::Test
     end
   end
 
+  def test_relaxed
+    assert EmailAddress::Local.new("first..last", local_format: :relaxed).valid?, "relax.."
+    assert EmailAddress::Local.new("first.-last", local_format: :relaxed).valid?, "relax.-"
+    assert EmailAddress::Local.new("a", local_format: :relaxed).valid?, "relax single"
+    assert ! EmailAddress::Local.new("firstlast_", local_format: :relaxed).valid?, "last_"
+  end
+
   def test_unicode
     assert ! EmailAddress::Local.new("üñîçøðé1", local_encoding: :ascii).standard?, "not üñîçøðé1"
     assert EmailAddress::Local.new("üñîçøðé2", local_encoding: :unicode).standard?, "üñîçøðé2"

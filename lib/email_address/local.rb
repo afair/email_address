@@ -19,6 +19,9 @@ module EmailAddress
   # Case: sensitive, but usually treated as equivalent
   # Local Parts: comment, mailbox tag
   # Length: up to 64 characters
+  # Note: gmail does allow ".." against RFC because they are ignored. This will
+  #   be fixed by collapsing consecutive punctuation in conventional formats,
+  #   and consider them typos.
   ##############################################################################
   # RFC5322 Rules (Oct 2008):
   #---------------------------------------------------------------------------
@@ -74,8 +77,13 @@ module EmailAddress
 
     # Conventional : word([.-+'_]word)*
     CONVENTIONAL_MAILBOX_REGEX = /\A[\p{L}\p{N}]+([\.\-\+\'_][\p{L}\p{N}]+)*\z/
+
+    # Relaxed: same characters, relaxed order
+    RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}]+ ( [\.\-\+\'_]+ [\p{L}\p{N}]+ )* \z/x
+
     # RFC5322 Non-Quoted: [ALPHA DIGIT ! # $ % & ' * + - / = ? ^ _ ` { | } ~]+
     STANDARD_MAILBOX_REGEX = /\A[\p{L}\p{N}\.\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+\z/
+
     # RFC5322 Quoted: "( \[\ " ] | [( ) < > [ ] : ; @ , .] | SPACE | STANDARD_MAILBOX_CHARACTERS)+"
     STANDARD_QUOTED_MAILBOX_REGEX =
       /\A \" ( \\[\" \\]
@@ -111,8 +119,9 @@ module EmailAddress
       if raw =~ /\A\"(.*)\"\z/ # Quoted
         raw = $1
         raw.gsub!(/\\(.)/, '\1') # Unescape
-      else
-        raw.gsub!(' ','') if @config[:local_fix]
+      elsif @config[:local_fix]
+        raw.gsub!(' ','')
+        raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
       end
       (raw, comment) = self.parse_comment(raw)
       (mailbox, tag) = self.parse_tag(raw)
@@ -232,6 +241,8 @@ module EmailAddress
         self.relaxed?
       elsif format == :standard
         self.standard?
+      elsif format == :none
+        true
       else
         raise "Unknown format #{format}"
       end
@@ -272,13 +283,13 @@ module EmailAddress
       true
     end
 
-    # Relaxed conventional is Standard, without Quoted form and allows ".."
+    # Relaxed conventional is not so strict about character order.
     def relaxed?
       self.syntax = :invalid
       self.valid_size? or return false
       self.valid_encoding? or return false
-      if self.local =~ STANDARD_MAILBOX_REGEX
-        self.syntax = :standard
+      if self.local =~ RELAXED_MAILBOX_REGEX
+        self.syntax = :relaxed
         true
       else
         false
@@ -289,11 +300,12 @@ module EmailAddress
       self.syntax = :invalid
       self.valid_size? or return false
       self.valid_encoding? or return false
-      if self.relaxed?
+      if self.local =~ STANDARD_MAILBOX_REGEX
         if self.local.include?("..") # Not allowed
           self.syntax = :invalid
           false
         else
+          self.syntax = :standard
           true
         end
       elsif self.local =~ STANDARD_QUOTED_MAILBOX_REGEX
