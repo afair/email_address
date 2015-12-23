@@ -20,9 +20,9 @@ module EmailAddress
       end
     end
 
-    def initialize(host, options={})
+    def initialize(host, config={})
       @host = host
-      @options = options
+      @config = config
     end
 
     def each(&block)
@@ -72,6 +72,21 @@ module EmailAddress
     # Returns an array of MX IP address (String) for the given email domain
     def mx_ips
       mxers.map {|m| m[1] }
+    end
+
+    # Simple matcher, takes an array of CIDR addresses (ip/bits) and strings.
+    # Returns true if any MX IP matches the CIDR or host name ends in string.
+    # Ex: match?(%w(127.0.0.1/32 0:0:1/64 .yahoodns.net))
+    def match?(rules)
+      rules = Array(rules)
+      rules.each do |rule|
+        if rule.include?("/")
+          return true if self.in_cidr?(rule)
+        else
+          self.each {|mx| return true if mx[:host].end_with?(rule) }
+        end
+      end
+      false
     end
 
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.

@@ -9,6 +9,7 @@ module EmailAddress
   # Length: up to 255 characters
   # Parts for: subdomain.example.co.uk
   #     host_name:         "subdomain.example.co.uk"
+  #     dns_name:          punycode("subdomain.example.co.uk")
   #     subdomain:         "subdomain"
   #     registration_name: "example"
   #     domain_name:       "example.co.uk"
@@ -16,8 +17,8 @@ module EmailAddress
   #     ip_address:        nil or "ipaddress" used in [ipaddress] syntax
   ##############################################################################
   class Host
-    attr_reader :host_name, :parts, :domain_name, :registration_name,
-                :tld, :subdomains, :ip_address
+    attr_accessor :host_name, :dns_name, :domain_name, :registration_name,
+                  :tld, :subdomains, :ip_address, :config, :provider
 
     # host name -
     #   * full domain name after @ for email types
@@ -25,67 +26,185 @@ module EmailAddress
     # host type -
     #   :email - email address domain
     #   :mx    - email exchanger domain
-    def initialize(host_name, host_type=:email)
-      host_name||= ''
-      @host_name = host_name.downcase
-      @host_type = host_type
-      parse_host(@host_name)
+    def initialize(host_name, config={})
+      @original  = host_name ||= ''
+      @host_type = config[:host_type] || :email
+      @config    = config
+      parse(host_name)
     end
 
-    def to_s
-      @host_name
-    end
-    alias :name :to_s
-
-    def parse_host(host)
-      @parser = EmailAddress::DomainParser.new(host)
-      @parts  = @parser.parts
-      @parts.each { |k,v| instance_variable_set("@#{k}", v) }
-    end
-
-    # The host name to send to DNS lookup, Punycode-escaped
-    def dns_host_name
-      @dns_host_name ||= ::SimpleIDN.to_ascii(@host_name)
-    end
-    alias :punycode :dns_host_name
-
-    def unicode
-      if @host_name.include?("--")
-        ::SimpleIDN.to_unicode(@host_name)
+    def name
+      if self.ipv4?
+        "[#{self.ip_address}]"
+      elsif self.ipv6?
+        "[IPv6:#{self.ip_address}]"
+      elsif @config[:host_encoding] && @config[:host_encoding] == :unicode
+        self.host_name
       else
-        @host_name
+        self.dns_name
       end
     end
-
-    def normalize
-      dns_host_name
-    end
+    alias :to_s :name
 
     # The canonical host name is the simplified, DNS host name
     def canonical
-      dns_host_name
+      self.dns_name
     end
 
-    def exchanger
-      return nil unless @host_type == :email
-      @exchanger = EmailAddress::Exchanger.cached(self.dns_host_name)
-    end
+    ############################################################################
+    # Parsing
+    ############################################################################
 
-    def provider
-      @provider ||= @parser.provider
-      if !@provider && EmailAddress::Config.options[:check_dns]
-        @provider = exchanger.provider
+    def parse(host)
+      if host =~ /\A\[IPv6:(.+)\]/i
+        self.ip_address = $1
+      elsif host =~ /\A\[(\d{1,3}(\.\d{1,3}){3})\]/ # IPv4
+        self.ip_address = $1
+      else
+        self.host_name = host
       end
-      @provider ||= :unknown
     end
 
-    def matches?(*names)
-      DomainMatcher.matches?(@host_name, names.flatten)
+    def host_name=(name)
+      @host_name = name = name.strip.downcase.gsub(' ', '').gsub(/\(.*\)/, '')
+      @dns_name  = ::SimpleIDN.to_ascii(self.host_name)
+
+      # Subdomain only (root@localhost)
+      if name.index('.').nil?
+        self.subdomains = name
+
+      # Split sub.domain from .tld: *.com, *.xx.cc, *.cc
+      elsif name =~ /\A(.+)\.(\w{3,10})\z/ ||
+            name =~ /\A(.+)\.(\w{1,3}\.\w\w)\z/ ||
+            name =~ /\A(.+)\.(\w\w)\z/
+
+        self.tld = $2;
+        sld  = $1 # Second level domain
+        if sld =~ /\A(.+)\.(.+)\z/ # is subdomain? sub.example [.tld]
+          self.subdomains  = $1
+          self.registration_name = $2
+        else
+          self.registration_name = sld
+          self.domain_name = sld + '.' + self.tld
+        end
+        self.domain_name = self.registration_name + '.' + self.tld
+        self.find_provider
+      end
     end
 
+    def find_provider
+      return self.provider if self.provider
+      self.provider = :default
+
+      EmailAddress::Config.providers.each do |provider, config|
+        if config[:host_match] && self.match?(config[:host_match])
+          return self.set_provider(provider, config)
+        end
+      end
+
+      return self.provider unless self.dns_enabled?
+
+      EmailAddress::Config.providers.each do |provider, config|
+        if config[:exchanger_match] &&
+            self.exchangers.match?(config[:exchanger_match])
+          return self.set_provider(provider, config)
+        end
+      end
+
+      self.provider
+    end
+
+    def set_provider(name, provider_config={})
+      self.config = EmailAddress::Config.all_settings(provider_config, @config)
+      self.provider = name
+    end
+
+    ############################################################################
+    # Access and Queries
+    ############################################################################
+
+    # Is this a fully-qualified domain name?
+    def fqdn?
+      self.tld ? true : false
+    end
+
+    def ip?
+      self.ip_address.nil? ? false : true
+    end
+
+    def ipv4?
+      self.ip? && self.ip_address.include?(".")
+    end
+
+    def ipv6?
+      self.ip? && self.ip_address.include?(":")
+    end
+
+    ############################################################################
+    # Matching
+    ############################################################################
+
+    # Takes a email address string, returns true if it matches a rule
+    def match?(rules)
+      rules = Array(rules)
+      return false if rules.empty?
+      rules.each do |rule|
+        return true if registration_name_matches?(rule)
+        return true if tld_matches?(rule)
+        return true if domain_matches?(rule)
+        return true if self.provider && provider_matches?(rule)
+      end
+      false
+    end
+
+    # Does "example." match any tld?
+    def registration_name_matches?(rule)
+      self.registration_name + '.' == rule ? true : false
+    end
+
+    # Does "sub.example.com" match ".com" and ".example.com" top level names?
+    def tld_matches?(rule)
+      rule.match(/\A\.(\w+)\z/) && $1 == self.tld ? true : false
+    end
+
+    def provider_matches?(rule)
+      rule.to_s =~ /\A[\w\-]*\z/ && self.provider && self.provider == rule.to_sym
+    end
+
+    # Does domain == rule or glob matches?
+    def domain_matches?(rule, domain=@domain)
+      return false if rule.include?("@")
+      self.domain_name == rule || File.fnmatch?(rule, self.domain_name)
+    end
+
+    ############################################################################
+    # DNS
+    ############################################################################
+
+    def dns_enabled?
+      EmailAddress::Config.setting(:dns_lookup)
+    end
+
+    def has_dns_a_record?
+      dns_a_record.size > 0 ? true : false
+    end
+
+    # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
+    def dns_a_record
+      @_dns_a_record ||= Socket.gethostbyname(@host)
+    rescue SocketError # not found, but could also mean network not work
+      @_dns_a_record ||= []
+    end
+
+    def exchangers
+      return nil if @host_type != :email || !self.dns_enabled?
+      @_exchangers ||= EmailAddress::Exchanger.cached(self.dns_name)
+    end
+
+    # Returns a DNS TXT Record
     def txt(alternate_host=nil)
       Resolv::DNS.open do |dns|
-        records = dns.getresources(alternate_host || self.dns_host_name,
+        records = dns.getresources(alternate_host || self.dns_name,
                          Resolv::DNS::Resource::IN::TXT)
         records.empty? ? nil : records.map(&:data).join(" ")
       end
@@ -105,7 +224,29 @@ module EmailAddress
     end
 
     def dmarc
-      self.txt_hash("_dmarc." + self.dns_host_name)
+      self.txt_hash("_dmarc." + self.dns_name)
+    end
+
+    ############################################################################
+    # Validation
+    ############################################################################
+
+    def valid?(rule=@config[:host_validation]||:mx)
+      if self.provider != :default # well known
+        true
+      elsif self.ip_address
+        if @config[:host_allow_ip]
+          # Validate IP
+        else
+          false
+        end
+      elsif rule == :mx
+        true
+      elsif rule == :a
+        true
+      else
+        false
+      end
     end
 
   end

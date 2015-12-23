@@ -116,7 +116,7 @@ module EmailAddress
 
     def local=(raw)
       self.original = raw
-      raw.downcase! if @config[:local_downcase]
+      raw.downcase! if @config[:local_downcase].nil? || @config[:local_downcase]
       @local = raw
 
       if @config[:local_parse].is_a?(Proc)
@@ -137,8 +137,8 @@ module EmailAddress
         raw.gsub!(',','.')
         raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
       end
-      (raw, comment) = self.parse_comment(raw)
-      (mailbox, tag) = self.parse_tag(raw)
+      raw, comment = self.parse_comment(raw)
+      mailbox, tag = self.parse_tag(raw)
       [mailbox, tag, comment]
     end
 
@@ -156,7 +156,7 @@ module EmailAddress
     end
 
     def parse_tag(raw)
-      separator = @config[:tag_separator] or return [raw, nil]
+      separator = @config[:tag_separator] ||= '+'
       raw.split(separator, 2)
     end
 
@@ -169,11 +169,11 @@ module EmailAddress
     end
 
     def redacted?
-      self.local =~ REDACTED_REGEX
+      self.local =~ REDACTED_REGEX ? true : false
     end
 
     def self.redacted?(local)
-      local =~ REDACTED_REGEX
+      local =~ REDACTED_REGEX ? true : false
     end
 
     def special?
@@ -257,7 +257,9 @@ module EmailAddress
     ############################################################################
 
     def valid?(format=@config[:local_format]||:conventional)
-      if format.is_a?(Proc)
+      if @config[:mailbox_validator].is_a?(Proc)
+        @config[:mailbox_validator].call(self.mailbox, self.tag)
+      elsif format.is_a?(Proc)
         format.call(self)
       elsif format == :conventional
         self.conventional?
@@ -328,15 +330,6 @@ module EmailAddress
       self.syntax = :invalid
       self.valid_size? or return false
       self.valid_encoding? or return false
-      #if self.local =~ STANDARD_MAILBOX_REGEX
-      #  if self.local.include?("..") # Not allowed
-      #    self.syntax = :invalid
-      #    false
-      #  else
-      #    self.syntax = :standard
-      #    true
-      #  end
-      ##elsif self.local =~ STANDARD_QUOTED_MAILBOX_REGEX
       if self.local =~ STANDARD_TOKEN_REGEX
         self.syntax = :standard
         true

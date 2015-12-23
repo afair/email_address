@@ -36,37 +36,42 @@ end
 
   # Creates an instance of this email address.
   # This is a short-cut to Email::Address::Address.new
-  def self.new(email_address)
-    EmailAddress::Address.new(email_address)
+  def self.new(email_address, config={})
+    EmailAddress::Address.new(email_address, config)
   end
 
   # Given an email address, this return true if the email validates, false otherwise
-  def self.valid?(email_address, options={})
-    self.new(email_address).valid?(options)
+  def self.valid?(email_address, config={})
+    self.new(email_address, config).valid?
+  end
+
+  # Shortcut to normalize the given email address in the given format
+  def self.normal(email_address, config={})
+    EmailAddress::Address.new(email_address, config).to_s
   end
 
   # Shortcut to normalize the given email address
-  def self.normal(email_address)
-    EmailAddress::Address.new(email_address).normalize
+  def self.redact(email_address, config={})
+    EmailAddress::Address.new(email_address, config).redact
   end
 
-  def self.new_normal(email_address)
-    EmailAddress::Address.new(EmailAddress::Address.new(email_address).normalize)
+  def self.new_redacted(email_address, config={})
+    EmailAddress::Address.new(EmailAddress::Address.new(email_address, config).redact)
   end
 
   # Returns the Canonical form of the email address. This form is what should
   # be considered unique for an email account, lower case, and no address tags.
-  def self.canonical(email_address)
-    EmailAddress::Address.new(email_address).canonical
+  def self.canonical(email_address, config={})
+    EmailAddress::Address.new(email_address, config).canonical
   end
 
-  def self.new_canonical(email_address)
-    EmailAddress::Address.new(EmailAddress::Address.new(email_address).canonical)
+  def self.new_canonical(email_address, config={})
+    EmailAddress::Address.new(EmailAddress::Address.new(email_address, config).canonical, config)
   end
 
   # Returns the Reference form of the email address, defined as the MD5
   # digest of the Canonical form.
-  def self.reference(email_address)
-    EmailAddress::Address.new(email_address).reference
+  def self.reference(email_address, config={})
+    EmailAddress::Address.new(email_address, config).reference
   end
 end

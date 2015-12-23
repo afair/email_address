@@ -1,84 +1,160 @@
 module EmailAddress
+  # Global configurations and for default/unknown providers. Settings are:
+  #
+  # * dns_lookup:         :mx, :a, :off
+  #   Enables DNS lookup for validation by
+  #   :mx       - DNS MX Record lookup
+  #   :a        - DNS A Record lookup (as some domains don't specify an MX incorrectly)
+  #   :off      - Do not perform DNS lookup (Test mode, network unavailable)
+  #
+  # For local part configuration:
+  # * local_downcase:     true
+  #   Downcase the local part. You probably want this for uniqueness.
+  #   RFC says local part is case insensitive, that's a bad part.
+  #
+  # * local_fix:          true,
+  #   Make simple fixes when available, remove spaces, condense multiple punctuations
+  #
+  # * local_encoding:     :ascii, :unicode,
+  #   Enable Unicode in local part. Most mail systems do not yet support this.
+  #   You probably want to stay with ASCII for now.
+  #
+  # * local_parse:        nil, ->(local) { [mailbox, tag, comment] }
+  #   Specify an optional lambda/Proc to parse the local part. It should return an
+  #   array (tuple) of mailbox, tag, and comment.
+  #
+  # * local_format:       :conventional, :relaxed, :redacted, :standard, Proc
+  #   :conventional       word ( puncuation{1} word )*
+  #   :relaxed            alphanum ( allowed_characters)* alphanum
+  #   :standard           RFC Compliant email addresses (anything goes!)
+  #
+  # * local_size:         1..64,
+  #   A Range specifying the allowed size for mailbox + tags + comment
+  #
+  # * tag_separator:      nil, character (+)
+  #   Nil, or a character used to split the tag from the mailbox
+  #
+  # For the mailbox (AKA account, role), without the tag
+  # * mailbox_size:       1..64
+  #   A Range specifying the allowed size for mailbox
+  #
+  # * mailbox_canonical:  nil, ->(mailbox) { mailbox }
+  #   An optional lambda/Proc taking a mailbox name, returning a canonical
+  #   version of it. (E.G.: gmail removes '.' characters)
+  #
+  # * mailbox_validator:  nil, ->(mailbox) { true }
+  #   An optional lambda/Proc taking a mailbox name, returning true or false.
+  #
+  # * host_encoding:      :punycode,  :unicode,
+  #   How to treat International Domain Names (IDN). Note that most mail and
+  #   DNS systems do not support unicode, so punycode needs to be passed.
+  #   :punycode           Convert Unicode names to punycode representation
+  #   :unicode            Keep Unicode names as is.
+  #
+  # * host_validation:
+  #   :mx                 Ensure host is configured with DNS MX records
+  #   :a                  Ensure host is known to DNS (A Record)
+  #   :syntax             Validate by syntax only, no Network verification
+  #   :connect            Attempt host connection (not implemented, BAD!)
+  #
+  # * host_size:          1..253,
+  #   A range specifying the size limit of the host part,
+  #
+  # * host_allow_ip:      false,
+  #   Allow IP address format in host: [127.0.0.1], [IPv6:::1]
+  #
+  # * address_validation: :parts, :smtp, ->(address) { true }
+  #   Address validation policy
+  #   :parts              Validate local and host.
+  #   :smtp               Validate via SMTP (not implemented, BAD!)
+  #   A lambda/Proc taking the address string, returning true or false
+  #
+  # * address_size:       3..254,
+  #   A range specifying the size limit of the complete address
+  #
+  # * address_local:      false,
+  #   Allow localhost, no domain, or local subdomains.
+  #
+  # For provider rules to match to domain names and Exchanger hosts
+  # The value is an array of match tokens.
+  # * host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
+  # * exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
+
   class Config
-    @options = {
-       downcase_mailboxes: true,
-       check_dns:          true,
-       #default_format:     EmailAddress::CHECK_CONVENTIONAL_SYNTAX,
+    @config = {
+      dns_lookup:         :mx,  # :mx, :a, :off
+
+      local_downcase:     true,
+      local_fix:          true,
+      local_encoding:     :ascii, # :ascii, :unicode,
+      local_parse:        nil,   # nil, Proc
+      local_format:       :conventional, # :conventional, :relaxed, :redacted, :standard, Proc
+      local_size:         1..64,
+      tag_separator:      '+', # nil, character
+      mailbox_size:       1..64, # without tag
+      mailbox_canonical:  nil, # nil,  Proc
+      mailbox_validator:  nil, # nil,  Proc
+
+      host_encoding:      :punycode || :unicode,
+      host_validation:    :mx || :a || :connect,
+      host_size:          1..253,
+      host_allow_ip:      false,
+
+      address_validation: :parts, # :parts, :smtp, Proc
+      address_size:       3..254,
+      address_localhost:  false,
     }
 
     @providers = {
-       default: {
-         domains:           [],
-         exchangers:        [],
-         tag_separator:     '+',
-         case_sensitive:    false,
-         address_size:      3..254,
-         local_size:        1..64,
-         domain_size:       1..253,
-         mailbox_size:      1..64,
-         mailbox_unicode:   false,
-         canonical_mailbox: ->(m) {m},
-         valid_mailbox:     nil,  # :legible, :rfc, ->(m) {true}
-       },
-       aol: {
-         registration_names: %w(aol compuserve netscape aim cs)
-       },
-       google: {
-         domains:           %w(gmail.com googlemail.com),
-         exchangers:        %w(google.com),
-         local_size:        5..64,
-         canonical_mailbox: ->(m) {m.gsub('.','')},
-         #valid_mailbox:    ->(local) { local.mailbox =~ /\A[a-z0-9][\.a-z0-9]{5,29}\z/i},
-       },
-       msn: {
-         valid_mailbox:    ->(m) { m =~ /\A[a-z0-9][\.\-a-z0-9]{5,29}\z/i},
-       },
-       yahoo: {
-         domains:          %w(yahoo ymail rocketmail),
-         exchangers:       %w(yahoodns yahoo-inc),
-       },
+      aol: {
+        host_match:       %w(aol. compuserve. netscape. aim. cs.),
+      },
+      google: {
+        host_match:       %w(gmail.com googlemail.com),
+        exchanger_match:  %w(google.com),
+        local_size:       5..64,
+        mailbox_canonical: ->(m) {m.gsub('.','')},
+      },
+      msn: {
+        host_match:       %w(msn. hotmail. outlook. live.),
+        mailbox_validator: ->(m,t) { m =~ /\A[a-z0-9][\.\-a-z0-9]{5,29}\z/i},
+      },
+      yahoo: {
+        host_match:       %w(yahoo. ymail. rocketmail.),
+        exchanger_match:  %w(yahoodns yahoo-inc),
+      },
     }
 
+    # Set multiple default configuration settings
+    def self.configure(config={})
+      @config.merge!(config)
+    end
+
+    def self.setting(name, *value)
+      name = name.to_sym
+      @config[name] = value.first if value.size > 0
+      @config[name]
+    end
+
+    # Returns the hash of Provider rules
     def self.providers
       @providers
     end
 
-    #def provider(name, defn={})
-    #  EmailAddress::Config.providers[name] = defn
-    #end
-
-    def self.options
-      @options
+    # Configure or lookup a provider by name.
+    def self.provider(name, config={})
+      name = name.to_sym
+      if config.size > 0
+        @providers[name] ||= @config.clone
+        @providers[name].merge!(config)
+      end
+      @providers[name]
     end
 
-    def self.provider(name)
-      @providers[:default].merge(@providers.fetch(name) { Hash.new })
-    end
-
-    class Setup
-      attr_reader :providers
-
-      def initialize
-        @providers = {}
-      end
-
-      def do_block(&block)
-        instance_eval(&block)
-      end
-
-      def provider(name, defn={})
-        EmailAddress::Config.providers[name] = defn
-      end
-
-      def option(name, value)
-        EmailAddress::Config.options[name.to_sym] = value
-      end
-    end
-
-    def self.setup(&block)
-      @setup ||= Setup.new
-      @setup.do_block(&block) if block_given?
-      @setup
+    def self.all_settings(*configs)
+      config = @config.clone
+      configs.each {|c| config.merge!(c) }
+      config
     end
   end
 end
