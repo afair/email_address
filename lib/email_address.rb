@@ -1,38 +1,17 @@
 
 module EmailAddress
-  #CHECK_CONVENTIONAL_SYNTAX = 1 # Real-word Conventional Syntax
-  #CHECK_STANDARD_SYNTAX     = 2 # RFC-Compliant Syntax
-  #CHECK_PROVIDER_SYNTAX     = 3 # Syntax rules by email provider
-  #CHECK_DNS                 = 4 # Perform DNS A-Record ookup on domain
-  #CHECK_MX                  = 5 # Perform DNS MX-Record lookup on domain
-  #CHECK_CONNECT             = 6 # Attempt connection to remote mail server
-  #CHECK_SMTP                = 7 # Perform SMTP email verification
 
-  #SYSTEM_MAILBOXES = %w(abuse help mailer-daemon postmaster root)
-  #ROLE_MAILBOXES   = %w(info sales staff office marketing orders billing
-  #                      careers jobs)
-  ## RFC-2142
-  #BUSINESS_MAILBOXES = %w(info marketing sales support)
-  #NETWORK_MAILBOXES  = %w(abuse noc security)
-  #SERVICE_MAILBOXES  = %w(postmaster hostmaster usenet news webmaster www uucp ftp)
-  #SYSTEM_MAILBOXES   = %w(help mailer-daemon root) # Not from RFC-2142
-  #ROLE_MAILBOXES     = %w(staff office orders billing careers jobs) # Not from RFC-2142
-
-require "email_address/address"
-require "email_address/config"
-require "email_address/domain_matcher"
-require "email_address/domain_parser"
-require "email_address/exchanger"
-require "email_address/host"
-require "email_address/local"
-require "email_address/matcher"
-require "email_address/validator"
-require "email_address/version"
-require "email_address/active_record_validator" if defined?(ActiveModel)
-if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
-  require "email_address/email_address_type"
-  require "email_address/canonical_email_address_type"
-end
+  require "email_address/address"
+  require "email_address/config"
+  require "email_address/exchanger"
+  require "email_address/host"
+  require "email_address/local"
+  require "email_address/version"
+  require "email_address/active_record_validator" if defined?(ActiveModel)
+  if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
+    require "email_address/email_address_type"
+    require "email_address/canonical_email_address_type"
+  end
 
   # Creates an instance of this email address.
   # This is a short-cut to Email::Address::Address.new
@@ -73,5 +52,10 @@ end
   # digest of the Canonical form.
   def self.reference(email_address, config={})
     EmailAddress::Address.new(email_address, config).reference
+  end
+
+  # Does the email address match any of the given rules
+  def self.matches?(email_address, rules, config={})
+    EmailAddress::Address.new(email_address, config).matches?(rules)
   end
 end

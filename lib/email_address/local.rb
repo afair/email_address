@@ -292,8 +292,8 @@ module EmailAddress
     end
 
     def valid_size?
-      return false if @config[:local_size] && @config[:local_size] < self.local.size
-      return false if @config[:mailbox_size] && @config[:mailbox_size] < self.mailbox.size
+      return false if @config[:local_size] && !@config[:local_size].include?(self.local.size)
+      return false if @config[:mailbox_size] && !@config[:mailbox_size].include?(self.mailbox.size)
       return false if self.local.size > STANDARD_MAX_SIZE
       true
     end
@@ -336,6 +336,17 @@ module EmailAddress
       else
         false
       end
+    end
+
+    # Matches configured formated form against File glob strings given.
+    # Rules must end in @ to distinguish themselves from other email part matches.
+    def matches?(*rules)
+      rules.flatten.each do |r|
+        if r =~ /(.+)@\z/
+          return r if File.fnmatch?($1, self.local)
+        end
+      end
+      false
     end
   end
 end

@@ -166,7 +166,18 @@ module EmailAddress
 
     # Address matches one of these Matcher rule patterns
     def matches?(*rules)
-      Matcher.new(rules).include?(self)
+      rules.flatten!
+      match   = self.local.matches?(rules)
+      match ||= self.host.matches?(rules)
+      return match if match
+
+      # Does "root@*.com" match "root@example.com" domain name
+      rules.each do |r|
+        if r =~ /.+@.+/
+          return r if File.fnmatch?(r, self.to_s)
+        end
+      end
+      false
     end
 
     #---------------------------------------------------------------------------
@@ -184,15 +195,18 @@ module EmailAddress
         self.error = "Invalid Host"
         return false
       end
-      if @config[:address_size] && @config[:address_size] < self.to_s.size
+      if @config[:address_size] && !@config[:address_size].include?(self.to_s.size)
         self.error = "Exceeds size"
         return false
       end
-      if @config[:address_validation]
+      if @config[:address_validation].is_a?(Proc)
         unless @config[:address_validation].call(self.to_s)
           self.error = "Not allowed"
           return false
         end
+      else
+        return false unless self.local.valid?
+        return false unless self.host.valid?
       end
       if !@config[:address_local] && !self.hostname.include?(".")
         self.error = "Incomplete Domain"

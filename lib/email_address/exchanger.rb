@@ -77,7 +77,7 @@ module EmailAddress
     # Simple matcher, takes an array of CIDR addresses (ip/bits) and strings.
     # Returns true if any MX IP matches the CIDR or host name ends in string.
     # Ex: match?(%w(127.0.0.1/32 0:0:1/64 .yahoodns.net))
-    def match?(rules)
+    def matches?(rules)
       rules = Array(rules)
       rules.each do |rule|
         if rule.include?("/")
@@ -89,25 +89,27 @@ module EmailAddress
       false
     end
 
+    # Does the given IP address match one or more CIDR's?
+    def self.ip_in_cidr?(ip, *cidrs)
+      cidrs.flatten.each do |cidr|
+        cidr = NetAddr::CIDR.create(cidr)
+        if cidr.include?(":") && ip.include?(":")
+          return cidr if cidr.matches?(ip)
+        elsif cidr.include?(".") && ip.include?(".")
+          return cidr if cidr.matches?(ip)
+        end
+      end
+      false
+    end
+
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.
     def in_cidr?(cidr)
+      cidr = NetAddr::CIDR.create(cidr)
       if cidr.include?(":")
-        in_ipv6_cidr?(cidr)
+        mx_ips.find { |ip| ip.include?(":") && cidr.matches?(ip) } ? true : false
       else
-        in_ipv4_cidr?(cidr)
+        mx_ips.find { |ip| !ip.include?(":") && cidr.matches?(ip) } ? true : false
       end
-    end
-
-    private
-
-    def in_ipv4_cidr?(cidr)
-      cidr = NetAddr::CIDR.create(cidr)
-      mx_ips.find { |ip| !ip.include?(":") && cidr.matches?(ip) } ? true : false
-    end
-
-    def in_ipv6_cidr?(cidr)
-      cidr = NetAddr::CIDR.create(cidr)
-      mx_ips.find { |ip| ip.include?(":") && cidr.matches?(ip) } ? true : false
     end
 
   end

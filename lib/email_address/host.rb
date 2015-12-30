@@ -1,4 +1,6 @@
 require 'simpleidn'
+require 'resolv'
+require 'netaddr'
 
 module EmailAddress
   ##############################################################################
@@ -13,12 +15,13 @@ module EmailAddress
   #     subdomain:         "subdomain"
   #     registration_name: "example"
   #     domain_name:       "example.co.uk"
-  #     tld:               "co.uk"
+  #     tld:               "uk"
+  #     tld2:              "co.uk"
   #     ip_address:        nil or "ipaddress" used in [ipaddress] syntax
   ##############################################################################
   class Host
     attr_accessor :host_name, :dns_name, :domain_name, :registration_name,
-                  :tld, :subdomains, :ip_address, :config, :provider
+                  :tld, :tld2, :subdomains, :ip_address, :config, :provider
 
     # host name -
     #   * full domain name after @ for email types
@@ -78,16 +81,17 @@ module EmailAddress
             name =~ /\A(.+)\.(\w{1,3}\.\w\w)\z/ ||
             name =~ /\A(.+)\.(\w\w)\z/
 
-        self.tld = $2;
         sld  = $1 # Second level domain
-        if sld =~ /\A(.+)\.(.+)\z/ # is subdomain? sub.example [.tld]
+        self.tld2 = self.tld = $2;
+        self.tld = self.tld.sub(/\A.+\./, '') # co.uk => uk
+        if sld =~ /\A(.+)\.(.+)\z/ # is subdomain? sub.example [.tld2]
           self.subdomains  = $1
           self.registration_name = $2
         else
           self.registration_name = sld
-          self.domain_name = sld + '.' + self.tld
+          self.domain_name = sld + '.' + self.tld2
         end
-        self.domain_name = self.registration_name + '.' + self.tld
+        self.domain_name = self.registration_name + '.' + self.tld2
         self.find_provider
       end
     end
@@ -97,7 +101,7 @@ module EmailAddress
       self.provider = :default
 
       EmailAddress::Config.providers.each do |provider, config|
-        if config[:host_match] && self.match?(config[:host_match])
+        if config[:host_match] && self.matches?(config[:host_match])
           return self.set_provider(provider, config)
         end
       end
@@ -106,7 +110,7 @@ module EmailAddress
 
       EmailAddress::Config.providers.each do |provider, config|
         if config[:exchanger_match] &&
-            self.exchangers.match?(config[:exchanger_match])
+            self.exchangers.matches?(config[:exchanger_match])
           return self.set_provider(provider, config)
         end
       end
@@ -145,14 +149,22 @@ module EmailAddress
     ############################################################################
 
     # Takes a email address string, returns true if it matches a rule
-    def match?(rules)
+    # Rules of the follow formats are evaluated:
+    # * "example."  => registration name
+    # * ".com"      => top-level domain name
+    # * "google"    => email service provider designation
+    # * "@goog*.com" => Glob match
+    # * IPv4 or IPv6 or CIDR Address
+    def matches?(rules)
       rules = Array(rules)
       return false if rules.empty?
       rules.each do |rule|
-        return true if registration_name_matches?(rule)
-        return true if tld_matches?(rule)
-        return true if domain_matches?(rule)
-        return true if self.provider && provider_matches?(rule)
+        return rule if rule == self.domain_name || rule == self.dns_name
+        return rule if registration_name_matches?(rule)
+        return rule if tld_matches?(rule)
+        return rule if domain_matches?(rule)
+        return rule if self.provider && provider_matches?(rule)
+        return rule if self.ip_matches?(rule)
       end
       false
     end
@@ -163,18 +175,35 @@ module EmailAddress
     end
 
     # Does "sub.example.com" match ".com" and ".example.com" top level names?
+    # Matches TLD (uk) or TLD2 (co.uk)
     def tld_matches?(rule)
-      rule.match(/\A\.(\w+)\z/) && $1 == self.tld ? true : false
+      rule.match(/\A\.(.+)\z/) && ($1 == self.tld || $1 == self.tld2) ? true : false
     end
 
     def provider_matches?(rule)
       rule.to_s =~ /\A[\w\-]*\z/ && self.provider && self.provider == rule.to_sym
     end
 
-    # Does domain == rule or glob matches?
-    def domain_matches?(rule, domain=@domain)
-      return false if rule.include?("@")
-      self.domain_name == rule || File.fnmatch?(rule, self.domain_name)
+    # Does domain == rule or glob matches? (also tests the DNS (punycode) name)
+    # Requires optionally starts with a "@".
+    def domain_matches?(rule)
+      rule = $1 if rule =~ /\A@(.+)/
+      return rule if File.fnmatch?(rule, self.domain_name)
+      return rule if File.fnmatch?(rule, self.dns_name)
+      false
+    end
+
+    def ip_matches?(cidr)
+      return false unless self.ip_address
+      return cidr if !cidr.include?("/") && cidr == self.ip_address
+
+      c = NetAddr::CIDR.create(cidr)
+      if cidr.include?(":") && self.ip_address.include?(":") && c.matches?(self.ip_address)
+        return cidr
+      elsif cidr.include?(".") && self.ip_address.include?(".") && c.matches?(self.ip_address)
+        return cidr
+      end
+      false
     end
 
     ############################################################################
@@ -235,17 +264,21 @@ module EmailAddress
       if self.provider != :default # well known
         true
       elsif self.ip_address
-        if @config[:host_allow_ip]
-          # Validate IP
-        else
-          false
-        end
+        @config[:host_allow_ip] && self.valid_ip?
       elsif rule == :mx
         true
       elsif rule == :a
         true
       else
         false
+      end
+    end
+
+    def valid_ip?
+      if self.ip_address.include?(":")
+        self.ip_address =~ Resolv::IPv6::Regex
+      elsif self.ip_address.include?(".")
+        self.ip_address =~ Resolv::IPv4::Regex
       end
     end
 

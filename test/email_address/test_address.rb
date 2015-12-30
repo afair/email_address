@@ -46,6 +46,14 @@ class TestAddress < Minitest::Test
     assert_equal true, n.same_as?(a)
   end
 
+  def test_matches
+    a = EmailAddress.new("User+tag@gmail.com")
+    assert_equal false,  a.matches?('mail.com')
+    assert_equal 'google',  a.matches?('google')
+    assert_equal 'user+tag@',  a.matches?('user+tag@')
+    assert_equal 'user*@gmail*',  a.matches?('user*@gmail*')
+  end
+
   # VALIDATION
   def test_valid
     assert EmailAddress.valid?("User+tag@example.com"), "valid 1"

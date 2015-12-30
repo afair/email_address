@@ -81,4 +81,11 @@ class TestLocal < MiniTest::Test
     assert_equal :redacted, EmailAddress::Local.new(l).format?
   end
 
+  def test_matches
+    a = EmailAddress.new("User+tag@gmail.com")
+    assert_equal false,  a.matches?('user')
+    assert_equal false,  a.matches?('user@')
+    assert_equal 'user*@',  a.matches?('user*@')
+  end
+
 end

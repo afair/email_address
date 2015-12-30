@@ -12,7 +12,7 @@ task :default => :test
 desc "Run the Test Suite, toot suite"
 Rake::TestTask.new do |t|
   t.libs << "test"
-  t.pattern = "test/email_address/test_*.rb"
+  t.pattern = "test/**/test_*.rb"
 end
 #task :test do
 #  sh "find test -name 'test*rb' -exec ruby {} \\;"
