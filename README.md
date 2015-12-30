@@ -45,6 +45,7 @@ check.
     EmailAddress.canonical(address) #=> "clarkkent@gmail.com"
     EmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
     EmailAddress.redact(address)    #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
+    EmailAddress.matches?(address, 'google') #=> 'google' (true)
 
 Or you can create an instance of the email address to work with it.
 
@@ -71,6 +72,8 @@ Here are some other methods that are available.
 
     EmailAddress.normal("HIRO@こんにちは世界.com")
                         #=> "hiro@xn--28j2a3ar1pp75ovm7c.com"
+    EmailAddress.normal("hiro@xn--28j2a3ar1pp75ovm7c.com", host_encoding: :unicode)
+                        #=> "hiro@こんにちは世界.com"
 
 ### Configuration
 
@@ -79,28 +82,16 @@ control how the library treats that address. These can also be
 configured during initialization by provider and default (see below).
 
     EmailAddress.new("clark.kent@gmail.com",
-      dns_lookup:         :mx || :a || :off, # Global/Request setting
+                     dns_lookup::off, host_encoding: :unicode)
 
-      local_downcase:     true || false,
-      local_fix:          true || false,
-      local_encoding:     :ascii || :unicode,
-      local_parse:        true || false || ->(local) { "edited" }
-      local_validation:   :provider || :conventional || :relaxed || :standard || ->(local) { true } || :none
-      local_format:       :provider || :conventional || :standard ->(local) { "formatted" }
-      local_size:         1..64,
-      local_mailbox:      ->(ea) { ea.local.downcase.split("+").first },
-      tag_separator:      '+' || false,
-      mailbox_canonical:  ->(local) { local.downcase.split("+").first },
-      mailbox_size:       1..64, # without tag
+Globally, you can change and query configuration options:
 
-      host_encoding:      :punycode || :unicode,
-      host_validation:    :conventional || :mx || :a || :standard || :connect,
-      host_size:          1..253,
-      host_allow_ip:      false || true,
+    EmailAddress::Config.setting(:dns_lookup, :mx)
+    EmailAddress::Config.setting(:dns_lookup) #=> :mx
 
-      address_validation: :parts || :smtp || :external_name || ->(ea) { [] },
-      address_size:       3..254,
-    )
+Or set multiple settings at once:
+
+    EmailAddress::Config.configure(local_downcase:false, dns_lookup: :off)
 
 You can add special rules by domain or provider. It takes the options
 above and adds the :domain_match and :exchanger_match rules.
@@ -124,12 +115,94 @@ those patterns use the "default" provider rule set. Exchanger matches
 matches against the Mail Exchanger (SMTP receivers) hosts defined in
 DNS. If you specify an exchanger pattern, but requires a DNS MX lookup.
 
-You can change configuration options and add new providers such as:
+For Rails application, create an initializer file with your default
+configuration options:
 
-    EmailAddress::Config.setup do
-      provider :github, domains:%w(github.com github.io)
-      option   :check_dns, false
-    end
+    # ./config/initializers/email_address.rb
+    EmailAddress::Config.setting( local_format: :relaxed )
+    EmailAddress::Config.provider(:github,
+           host_match: %w(github.com), local_format: :standard)
+
+### Available Configuration Settings
+
+* dns_lookup: Enables DNS lookup for validation by
+    * :mx       - DNS MX Record lookup
+    * :a        - DNS A Record lookup (as some domains don't specify an MX incorrectly)
+    * :off      - Do not perform DNS lookup (Test mode, network unavailable)
+
+For local part configuration:
+
+* local_downcase: true.
+  Downcase the local part. You probably want this for uniqueness.
+  RFC says local part is case insensitive, that's a bad part.
+
+* local_fix:  true.
+  Make simple fixes when available, remove spaces, condense multiple punctuations
+
+* local_encoding:     :ascii, :unicode,
+  Enable Unicode in local part. Most mail systems do not yet support this.
+  You probably want to stay with ASCII for now.
+
+* local_parse:        nil, ->(local) { [mailbox, tag, comment] }
+  Specify an optional lambda/Proc to parse the local part. It should return an
+  array (tuple) of mailbox, tag, and comment.
+
+* local_format:
+    * :conventional - word ( puncuation{1} word )*
+    * :relaxed      - alphanum ( allowed_characters)* alphanum
+    * :standard     - RFC Compliant email addresses (anything goes!)
+
+* local_size:         1..64,
+  A Range specifying the allowed size for mailbox + tags + comment
+
+* tag_separator:      nil, character (+)
+  Nil, or a character used to split the tag from the mailbox
+
+For the mailbox (AKA account, role), without the tag
+* mailbox_size:       1..64
+  A Range specifying the allowed size for mailbox
+
+* mailbox_canonical:  nil, ->(mailbox) { mailbox }
+  An optional lambda/Proc taking a mailbox name, returning a canonical
+  version of it. (E.G.: gmail removes '.' characters)
+
+* mailbox_validator:  nil, ->(mailbox) { true }
+  An optional lambda/Proc taking a mailbox name, returning true or false.
+
+* host_encoding:      :punycode,  :unicode,
+  How to treat International Domain Names (IDN). Note that most mail and
+  DNS systems do not support unicode, so punycode needs to be passed.
+  :punycode           Convert Unicode names to punycode representation
+  :unicode            Keep Unicode names as is.
+
+* host_validation:
+  :mx                 Ensure host is configured with DNS MX records
+  :a                  Ensure host is known to DNS (A Record)
+  :syntax             Validate by syntax only, no Network verification
+  :connect            Attempt host connection (not implemented, BAD!)
+
+* host_size:          1..253,
+  A range specifying the size limit of the host part,
+
+* host_allow_ip:      false,
+  Allow IP address format in host: [127.0.0.1], [IPv6:::1]
+
+* address_validation: :parts, :smtp, ->(address) { true }
+  Address validation policy
+  :parts              Validate local and host.
+  :smtp               Validate via SMTP (not implemented, BAD!)
+  A lambda/Proc taking the address string, returning true or false
+
+* address_size:       3..254,
+  A range specifying the size limit of the complete address
+
+* address_local:      false,
+  Allow localhost, no domain, or local subdomains.
+
+For provider rules to match to domain names and Exchanger hosts
+The value is an array of match tokens.
+* host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
+* exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
 
 #### Rails Validator
 
@@ -176,70 +249,6 @@ There are different levels of validations you can perform. By default, it will
 validate to the "Provider" (if known), or "Conventional" format defined as the
 "default" provider. You may pass a a list of parameters to select
 which syntax and network validations to perform.
-
-Local Validation Option:
-
-* **:provider** - Uses Syntax rules by for the email provider. If not defined, it
-invokes either Conventional or Standard formats as configured.
-If the provider can be detected by the host name, a specialied rule can
-be applied, otherwise it validates as Conventional. _Default._
-* **:conventional** - Real-word, Conventional Syntax.
-This is usually the format you want.
-* **:relaxed** - A relaxed version of conventional. Use this if you find
-that format too strict for you.
-* **:standard** - RFC-Compliant Syntax. This is usually not what you want,
-and can allow garbage email addresses to validate.
-* **:none** - Skip local validation. Useful if you are using another
-  service to validate the email address.
-
-Host Validation Option:
-
-* **:syntax** - Conforms to standard domain name syntax. International
-  Domain Names are converted to Punycode. _Default._
-* **:dns** - Perform DNS A-Record lookup on domain. Some mis-configured domains
-just set up a DNS "A" record and not an "MX" record even though the "A" host
-accepts email.
-DNS checks will take longer, especially if the domain is not registered.
-* **:mx** - Perform DNS MX-Record lookup on domain. Require that a MX server
-must be configured for the domain.
-DNS checks will take longer, especially if the domain is not registered.
-This is usually what you want, unless DNS lookups slow down your
-processing.
-* **:connect** - Attempt connection to remote mail server. This could be a slow
-operation, as it must perform the DNS lookup, then attempt to connect to a remote
-server that may be greylisting your connection, especially if it detects too many
-bogus connections originating from your IP address.
-Most servers will not accept connections from dynamically assigned IP addresses
-such as home networks and shared hosting environments like AWS.
-
-Address Validation Option:
-
-* **:parts** -  Validate the Local and Host parts only. This is usually
-  what you want. _Default._
-* **:smtp** - Perform SMTP email verification. Performs a DNS lookup, connects to
-the mail server, sends an appropriate HELO, MAIL FROM, and RCPT TO command to determine
-if the email address is accepted, then disconnects. It can be a very slow process,
-cause problems in reputation from your IP address, and may not accurately report
-the non-existence of an email address. Additionally, if you have too
-many unknown addresses you are verifying, the remote server could
-classify it as  "dictionary attack" and block you.
-In other words: do not do this unless you
-know exactly what you are doing and the ramifications of it.
-* **:external_name or Proc** -  a predefined symbol or a proc accepting an email address string and
-returning an array of error messages (empty if valid).
-This Allows you to invoke custom code intended to call
-out to an external email address validation service. This could be
-wrapped into a plugin gem named like "email\_address-*servicename*"
-which defines a method name specified as a symbol.
-This is not called if the address fails local host validation.
-
-The validation (and errors) check takes a hash of validation options
-for :local, :host, and :address. Each can override with a given symbol
-name matching the rules defined above, or a callable code block. The
-block must return an array of error messages, which would be empty if
-valid.
-
-    EmailAddress.valid?(address, local: :provider, host: :mx, address: :parts)
 
 #### Comparison
 

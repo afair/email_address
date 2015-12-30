@@ -10,10 +10,9 @@ class TestEmailAddress < MiniTest::Test
   end
 
   def test_canonical
-    assert_equal "user@example.com", EmailAddress.canonical('USER+TAG@example.com')
-    a = EmailAddress.new_canonical('USER+TAG@example.com')
-    assert_equal 'user', a.local.to_s
-    assert_equal 'example.com', a.host.to_s
+    assert_equal "firstlast@gmail.com", EmailAddress.canonical('First.Last+TAG@gmail.com')
+    a = EmailAddress.new_canonical('First.Last+TAG@gmail.com')
+    assert_equal 'firstlast', a.local.to_s
   end
 
   def test_normal
@@ -22,6 +21,7 @@ class TestEmailAddress < MiniTest::Test
 
   def test_valid
     assert_equal true, EmailAddress.valid?('user@yahoo.com')
+    assert_equal true, EmailAddress.valid?('a@yahoo.com')
   end
 
   def test_matches
@@ -34,6 +34,14 @@ class TestEmailAddress < MiniTest::Test
 
   def test_redact
     assert_equal '{e037b6c476357f34f92b8f35b25d179a4f573f1e}@yahoo.com', EmailAddress.redact('user@yahoo.com')
+  end
+
+  def test_cases
+    %w( miles.o'brien@yahoo.com first..last@gmail.com a-b.c_d+e@f.gx
+    ).each do |address|
+      assert EmailAddress.valid?(address, dns_lookup:false), "valid?(#{address})"
+    end
+
   end
 
 end

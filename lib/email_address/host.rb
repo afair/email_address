@@ -42,7 +42,7 @@ module EmailAddress
       elsif self.ipv6?
         "[IPv6:#{self.ip_address}]"
       elsif @config[:host_encoding] && @config[:host_encoding] == :unicode
-        self.host_name
+        ::SimpleIDN.to_unicode(self.host_name)
       else
         self.dns_name
       end
@@ -98,7 +98,6 @@ module EmailAddress
 
     def find_provider
       return self.provider if self.provider
-      self.provider = :default
 
       EmailAddress::Config.providers.each do |provider, config|
         if config[:host_match] && self.matches?(config[:host_match])
@@ -106,16 +105,15 @@ module EmailAddress
         end
       end
 
-      return self.provider unless self.dns_enabled?
+      return self.set_provider(:default) unless self.dns_enabled?
 
-      EmailAddress::Config.providers.each do |provider, config|
-        if config[:exchanger_match] &&
-            self.exchangers.matches?(config[:exchanger_match])
-          return self.set_provider(provider, config)
-        end
+      provider = self.exchangers.provider
+      if provider != :default
+        self.set_provider(provider,
+          EmailAddress::Config.provider(self.provider))
       end
 
-      self.provider
+      self.provider ||= self.set_provider(:default)
     end
 
     def set_provider(name, provider_config={})
@@ -198,10 +196,10 @@ module EmailAddress
       return cidr if !cidr.include?("/") && cidr == self.ip_address
 
       c = NetAddr::CIDR.create(cidr)
-      if cidr.include?(":") && self.ip_address.include?(":") && c.matches?(self.ip_address)
-        return cidr
-      elsif cidr.include?(".") && self.ip_address.include?(".") && c.matches?(self.ip_address)
-        return cidr
+      if cidr.include?(":") && self.ip_address.include?(":")
+        return cidr if c.matches?(self.ip_address)
+      elsif cidr.include?(".") && self.ip_address.include?(".")
+        return cidr if c.matches?(self.ip_address)
       end
       false
     end

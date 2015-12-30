@@ -30,6 +30,8 @@ class TestHost < MiniTest::Test
   def test_unicode_host
     a = EmailAddress::Host.new("å.com")
     assert_equal "xn--5ca.com", a.dns_name
+    a = EmailAddress::Host.new("xn--5ca.com", host_encoding: :unicode)
+    assert_equal "å.com", a.to_s
   end
 
   def test_provider
