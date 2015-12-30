@@ -8,6 +8,10 @@ the format preferred for user email addresses.
 It can be configured to validate against RFC "Standard" formats,
 common email service provider formats, and perform DNS validation.
 
+Warning: Version 0.1.0 contains significant API and internal changes over the 0.0.3
+version. If you have been using the 0.0.x series of the gem, you may
+want to stick with that.
+
 ## Installation With Rails or Bundler
 
 If you are using Rails or a project with Bundler, add this line to your application's Gemfile:
