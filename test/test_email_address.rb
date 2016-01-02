@@ -41,7 +41,11 @@ class TestEmailAddress < MiniTest::Test
     ).each do |address|
       assert EmailAddress.valid?(address, dns_lookup:false), "valid?(#{address})"
     end
+  end
 
+  def test_empty
+    assert_equal "", EmailAddress.normal("")
+    assert_equal "", EmailAddress.normal(" ")
   end
 
 end

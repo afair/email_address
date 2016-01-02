@@ -63,7 +63,7 @@ class TestAddress < Minitest::Test
 
   def test_no_domain
     e = EmailAddress.new("User+tag.gmail.ws")
-    assert_equal 'localhost', e.hostname
+    assert_equal '', e.hostname
     assert_equal false, e.valid? # localhost not allowed by default
   end
 

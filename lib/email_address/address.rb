@@ -10,11 +10,13 @@ module EmailAddress
     # instance, and initializes the address to the "normalized" format of the
     # address. The original string is available in the #original method.
     def initialize(email_address, config={})
-      @original     = email_address
+      email_address.strip! if email_address
+      @original      = email_address
+      email_address||= ""
       if lh = email_address.match(/(.+)@(.+)/)
         (_, local, host) = lh.to_a
       else
-        (local, host)    = [email_address, 'localhost']
+        (local, host)    = [email_address, '']
       end
       @host         = EmailAddress::Host.new(host, config)
       @config       = @host.config
@@ -79,7 +81,15 @@ module EmailAddress
 
     # Returns the string representation of the normalized email address.
     def to_s
-      "#{self.local.to_s}@#{self.host.to_s}"
+      if !@original
+        @original
+      elsif self.local.to_s.size == 0
+        ""
+      elsif self.host.to_s.size == 0
+        self.local.to_s
+      else
+        "#{self.local.to_s}@#{self.host.to_s}"
+      end
     end
 
     def inspect

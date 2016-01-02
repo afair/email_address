@@ -79,6 +79,99 @@ Here are some other methods that are available.
     EmailAddress.normal("hiro@xn--28j2a3ar1pp75ovm7c.com", host_encoding: :unicode)
                         #=> "hiro@こんにちは世界.com"
 
+#### Rails Validator
+
+For Rails' ActiveRecord classes, EmailAddress provides an ActiveRecordValidator.
+Specify your email address attributes with `field: :user_email`, or
+`fields: [:email1, :email2]`. If neither is given, it assumes to use the
+`email` or `email_address` attribute.
+
+    class User < ActiveRecord::Base
+      validates_with EmailAddress::ActiveRecordValidator, field: :email
+    end
+
+#### Rails Email Address Type Attribute
+
+Initial support is provided for Active Record 5.0 attributes API.
+
+First, you need to register the type in
+`config/initializers/email_address.rb` along with any global
+configurations you want.
+
+    ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
+    ActiveRecord::Type.register(:canonical_email_address,
+                                EmailAddress::CanonicalEmailAddressType)
+
+Assume the Users table contains the columns "email" and "unique_email".
+We want to normalize the address in "email" and store the canonical/unique
+version in "unique_email". This code will set the canonical_email when
+the email attribute is assigned. With the canonical_email column,
+we can 
+
+    class User < ApplicationRecord
+      attribute :email, :email_address
+      attribute :canonical_email, :canonical_email_address
+
+      validates_with EmailAddress::ActiveRecordValidator,
+                     fields: %i(email canonical_email)
+
+      def email=(email_address)
+        self[:canonical_email] = email_address
+        self[:email] = email_address
+      end
+
+      def self.find_by_email(email)
+        user   = self.find_by(email: EmailAddress.normal(email))
+        user ||= self.find_by(canonical_email: EmailAddress.canonical(email))
+        user ||= self.find_by(canonical_email: EmailAddress.redacted(email))
+        user
+      end
+
+      def redact!
+        self[:canonical_email] = EmailAddress.redact(self.canonical_email)
+        self[:email]           = self[:canonical_email]
+      end
+    end
+
+Here is how the User model works:
+
+    user = User.new(email:"Pat.Smith+registrations@gmail.com")
+    user.email           #=> "pat.smith+registrations@gmail.com"
+    user.canonical_email #=> "patsmith@gmail.com"
+
+The `find_by_email` method looks up a given email address by the
+normalized form (lower case), then by the canonical form, then finally
+by the redacted form.
+
+#### Validation
+
+The only true validation is to send a message to the email address and
+have the user (or process) verify it has been received. Syntax checks
+help prevent erroneous input. Even sent messages can be silently
+dropped, or bounced back after acceptance.  Conditions such as a
+"Mailbox Full" can mean the email address is known, but abandoned.
+
+There are different levels of validations you can perform. By default, it will
+validate to the "Provider" (if known), or "Conventional" format defined as the
+"default" provider. You may pass a a list of parameters to select
+which syntax and network validations to perform.
+
+#### Comparison
+
+You can compare email addresses:
+
+    e1 = EmailAddress.new("Clark.Kent@Gmail.com")
+    e2 = EmailAddress.new("clark.kent+Superman@Gmail.com")
+    e3 = EmailAddress.new(e2.redact)
+    e1.to_s           #=> "clark.kent@gmail.com"
+    e2.to_s           #=> "clark.kent+superman@gmail.com"
+    e3.to_s           #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
+
+    e1 == e2          #=> false (Matches by normalized address)
+    e1.same_as?(e2)   #=> true  (Matches as canonical address)
+    e1.same_as?(e3)   #=> true  (Matches as redacted address)
+    e1 < e2           #=> true  (Compares using normalized address)
+
 ### Configuration
 
 You can pass an options hash on the `.new()` and helper class methods to
@@ -208,68 +301,6 @@ The value is an array of match tokens.
 * host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
 * exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
 
-#### Rails Validator
-
-For Rails' ActiveRecord classes, EmailAddress provides an ActiveRecordValidator.
-
-    class User < ActiveRecord::Base
-      validates_with EmailAddress::ActiveRecordValidator, field: :email
-    end
-
-#### Rails Email Address Type Attribute
-
-Initial support is provided for Active Record 5.0 and above.
-
-First, you need to register the type in `config/initializers/types.rb`
-
-    require "email_address"
-    ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
-    ActiveRecord::Type.register(:canonical_email_address,
-                                EmailAddress::CanonicalEmailAddressType)
-
-Assume the Users table contains the columns "email" and "unique_email". We want to normalize the address in "email" and store the canonical/unique version in "unique_email".
-
-    class User < ActiveRecord::Base
-      attribute :email, :email_address
-      attribute :unique_email, :canonical_email_address
-    end
-
-Here is how the User model works:
-
-    user = User.new(email:"Pat.Smith+registrations@gmail.com",
-                    unique_email:"Pat.Smith+registrations@gmail.com")
-    user.email        #=> "pat.smith+registrations@gmail.com"
-    user.unique_email #=> "patsmith@gmail.com"
-
-#### Validation
-
-The only true validation is to send a message to the email address and
-have the user (or process) verify it has been received. Syntax checks
-help prevent erroneous input. Even sent messages can be silently
-dropped, or bounced back after acceptance.  Conditions such as a
-"Mailbox Full" can mean the email address is known, but abandoned.
-
-There are different levels of validations you can perform. By default, it will
-validate to the "Provider" (if known), or "Conventional" format defined as the
-"default" provider. You may pass a a list of parameters to select
-which syntax and network validations to perform.
-
-#### Comparison
-
-You can compare email addresses:
-
-    e1 = EmailAddress.new("Clark.Kent@Gmail.com")
-    e2 = EmailAddress.new("clark.kent+Superman@Gmail.com")
-    e3 = EmailAddress.new(e2.redact)
-    e1.to_s           #=> "clark.kent@gmail.com"
-    e2.to_s           #=> "clark.kent+superman@gmail.com"
-    e3.to_s           #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
-
-    e1 == e2          #=> false (Matches by normalized address)
-    e1.same_as?(e2)   #=> true  (Matches as canonical address)
-    e1.same_as?(e3)   #=> true  (Matches as redacted address)
-    e1 < e2           #=> true  (Compares using normalized address)
-
 #### Matching
 
 Matching addresses by simple patterns:
@@ -314,6 +345,9 @@ Address from the DNS MX (Mail Exchanger) record. That IP should receive
 email messages on port 25 over SMTP.
 
 **Original**: email address is of the format given by the user.
+
+**Normal**: email address in with editing rules such as lower case and
+address fixing, but does not validate against any specific format.
 
 **Conventional**: Email address format that conforms the the formats supported
 by most email service providers. This removes the "Bad Parts" of the email address

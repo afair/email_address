@@ -139,6 +139,7 @@ module EmailAddress
       end
       raw, comment = self.parse_comment(raw)
       mailbox, tag = self.parse_tag(raw)
+      mailbox ||= ""
       [mailbox, tag, comment]
     end
 

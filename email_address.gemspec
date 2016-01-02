@@ -21,7 +21,8 @@ validator.}
 
   spec.add_development_dependency "minitest", "~> 5.8.3"
   spec.add_development_dependency "bundler", "~> 1.3"
-  spec.add_development_dependency "activemodel", "~> 5.0.0.beta1"
+  spec.add_development_dependency "activerecord", "~> 5.0.0.beta1"
+  spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "rake"
   spec.add_dependency "simpleidn"
   spec.add_dependency "netaddr"
