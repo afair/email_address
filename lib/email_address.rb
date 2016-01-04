@@ -19,9 +19,15 @@ module EmailAddress
     EmailAddress::Address.new(email_address, config)
   end
 
-  # Given an email address, this return true if the email validates, false otherwise
+  # Given an email address, this returns true if the email validates, false otherwise
   def self.valid?(email_address, config={})
     self.new(email_address, config).valid?
+  end
+
+  # Given an email address, this returns nil if the email validates,
+  # or a string with a small error message otherwise
+  def self.error(email_address, config={})
+    e = self.new(email_address, config).error
   end
 
   # Shortcut to normalize the given email address in the given format

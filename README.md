@@ -146,6 +146,7 @@ check.
     EmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
     EmailAddress.redact(address)    #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
     EmailAddress.matches?(address, 'google') #=> 'google' (true)
+    EmailAddress.error("#bad@example.com") #=> "Invalid Mailbox"
 
 Or you can create an instance of the email address to work with it.
 

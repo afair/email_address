@@ -225,5 +225,9 @@ module EmailAddress
       true
     end
 
+    def error
+      self.valid? ? nil : @error
+    end
+
   end
 end
