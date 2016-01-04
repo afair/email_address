@@ -224,7 +224,7 @@ module EmailAddress
 
     # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
     def dns_a_record
-      @_dns_a_record ||= Socket.gethostbyname(@host)
+      @_dns_a_record ||= Socket.gethostbyname(self.dns_name)
     rescue SocketError # not found, but could also mean network not work
       @_dns_a_record ||= []
     end
@@ -264,14 +264,16 @@ module EmailAddress
     # Validation
     ############################################################################
 
-    def valid?(rule=@config[:host_validation]||:mx)
+    def valid?(rule=@config[:dns_lookup]||:mx)
       if self.provider != :default # well known
         true
       elsif self.ip_address
         @config[:host_allow_ip] && self.valid_ip?
       elsif rule == :mx
-        true
+        self.exchangers.mx_ips.size > 0
       elsif rule == :a
+        self.has_dns_a_record?
+      elsif rule == :off
         true
       else
         false

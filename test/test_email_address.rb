@@ -39,7 +39,7 @@ class TestEmailAddress < MiniTest::Test
   def test_cases
     %w( miles.o'brien@yahoo.com first..last@gmail.com a-b.c_d+e@f.gx
     ).each do |address|
-      assert EmailAddress.valid?(address, dns_lookup:false), "valid?(#{address})"
+      assert EmailAddress.valid?(address, dns_lookup: :off), "valid?(#{address})"
     end
   end
 

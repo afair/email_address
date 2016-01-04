@@ -56,9 +56,9 @@ class TestAddress < Minitest::Test
 
   # VALIDATION
   def test_valid
-    assert EmailAddress.valid?("User+tag@example.com"), "valid 1"
-    assert ! EmailAddress.valid?("User%tag@example.com"), "valid 2"
-    assert EmailAddress.new("ɹᴉɐℲuǝll∀@ɹᴉɐℲuǝll∀.ws", local_encoding: :uncode ), "valid unicode"
+    assert EmailAddress.valid?("User+tag@example.com", dns_lookup: :a), "valid 1"
+    assert ! EmailAddress.valid?("User%tag@example.com", dns_lookup: :a), "valid 2"
+    assert EmailAddress.new("ɹᴉɐℲuǝll∀@ɹᴉɐℲuǝll∀.ws", local_encoding: :uncode, dns_lookup: :off ), "valid unicode"
   end
 
   def test_no_domain
