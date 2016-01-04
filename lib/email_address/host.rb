@@ -81,15 +81,14 @@ module EmailAddress
             name =~ /\A(.+)\.(\w{1,3}\.\w\w)\z/ ||
             name =~ /\A(.+)\.(\w\w)\z/
 
-        sld  = $1 # Second level domain
-        self.tld2 = self.tld = $2;
-        self.tld = self.tld.sub(/\A.+\./, '') # co.uk => uk
-        if sld =~ /\A(.+)\.(.+)\z/ # is subdomain? sub.example [.tld2]
-          self.subdomains  = $1
+        sub_and_domain, self.tld2 = [$1, $2] # sub+domain, com || co.uk
+        self.tld = self.tld2.sub(/\A.+\./, '') # co.uk => uk
+        if sub_and_domain =~ /\A(.+)\.(.+)\z/ # is subdomain? sub.example [.tld2]
+          self.subdomains        = $1
           self.registration_name = $2
         else
-          self.registration_name = sld
-          self.domain_name = sld + '.' + self.tld2
+          self.registration_name = sub_and_domain
+          #self.domain_name = sub_and_domain + '.' + self.tld2
         end
         self.domain_name = self.registration_name + '.' + self.tld2
         self.find_provider
@@ -119,6 +118,13 @@ module EmailAddress
     def set_provider(name, provider_config={})
       self.config = EmailAddress::Config.all_settings(provider_config, @config)
       self.provider = name
+    end
+
+    # Returns a hash of the parts of the host name after parsing.
+    def parts
+      { host_name:self.host_name, dns_name:self.dns_name, subdomain:self.subdomains,
+        registration_name:self.registration_name, domain_name:self.domain_name,
+        tld2:self.tld2, tld:self.tld, ip_address:self.ip_address }
     end
 
     ############################################################################
