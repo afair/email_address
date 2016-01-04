@@ -475,3 +475,12 @@ instance has been provided.
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+#### Project
+
+This project lives at [https://github.com/afair/email_address/](https://github.com/afair/email_address/)
+
+#### Authors
+
+* [Allen Fair](https://github.com/afair) ([@allenfair](https://twitter.com/allenfair)):
+  I've worked with email-based applications and email addresses since 1999.
