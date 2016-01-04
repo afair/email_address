@@ -10,7 +10,9 @@ ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
 ActiveRecord::Type.register(:canonical_email_address,
                             EmailAddress::CanonicalEmailAddressType)
 
-File.unlink( ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db")
+if File.exist?( ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db")
+  File.unlink( ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db")
+end
 ActiveRecord::Base.establish_connection(
   :adapter  => "sqlite3",
   :database => ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db"

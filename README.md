@@ -3,7 +3,7 @@
 [![Gem Version](https://badge.fury.io/rb/email_address.svg)](http://rubygems.org/gems/email_address)
 
 This gem provides a ruby language library for working with and validating email addresses.
-By default, it validates against conventionial usage,
+By default, it validates against conventional usage,
 the format preferred for user email addresses.
 It can be configured to validate against RFC "Standard" formats,
 common email service provider formats, and perform DNS validation.
@@ -11,6 +11,104 @@ common email service provider formats, and perform DNS validation.
 Warning: Version 0.1.0 contains significant API and internal changes over the 0.0.3
 version. If you have been using the 0.0.x series of the gem, you may
 want to stick with that.
+
+## Background
+
+The email address specification is complex and often not what you want
+when working with personal email addresses in applications. This library
+introduces terms to distinguish types of email addresses.
+
+* *Normal* - The edited form of any input email address. Typically, it
+  is lower-cased and minor "fixes" can be performed, depending on the
+  configurations and email address provider.
+
+    CKENT@DAILYPLANET.NEWS => ckent@dailyplanet.news
+
+* *Conventional* - Most personal account addresses are in this basic
+  format, one or more "words" separated by a single simple punctuation
+  character. It consists of a mailbox (user name or role account) and
+  an optional address "tag" assigned by the user.
+
+    miles.o'brien@ncc-1701-d.ufp
+
+* *Relaxed* - A less strict form of Conventional, same character set,
+  must begin and end with an apha-numeric character, but order within
+  is not enforced.
+
+    aasdf-34-.z@example.com
+
+* *Standard* - The RFC-Compliant syntax of an email address. This is
+  useful when working with software-generated addresses or handling
+  existing email addresses, but otherwise not useful for personal
+  addresses.
+
+    madness!."()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a(comment )"@example.org
+
+* *Canonical* - An unique account address, lower-cased, without the
+  tag, and with irrelevant characters stripped.
+
+    clark.kent+scoops@gmail.com => clarkkent@gmail.com
+
+* *Reference* - The MD5 of the Canonical format, used to share account
+  references without exposing the private email address directly.
+
+    Clark.Kent+scoops@gmail.com => c5be3597c391169a5ad2870f9ca51901
+
+* *Redacted* - A form of the email address where it is replaced by
+  a SHA1-based version to remove the original address from the
+  database, or to store the address privately, yet still keep it
+  accessible at query time by converting the queried address to
+  the redacted form.
+
+    Clark.Kent+scoops@gmail.com => {bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com
+
+Other terms:
+
+* *Local* - The left-hand side of the "@", representing the user,
+  mailbox, or role, and an optional "tag".
+
+    mailbox+tag@example.com;   Local part: mailbox+tag
+
+* *Mailbox* - The destination user account or role account.
+* *Tag* - A parameter added after the mailbox, usually after the
+  "+" symbol, set by the user for mail filtering and sub-accounts.
+  Not all mail systems support this.
+* *Host* (sometimes called *Domain*) - The right-hand side of the "@"
+  indicating the domain or host name server to delivery the email.
+  If missing, "localhost" is assumed, or if not a fully-qualified
+  domain name, it assumed another computer on the same network, but
+  this is increasingly rare.
+* *Provider* - The Email Service Provider (ESP) providing the email
+  service. Each provider may have its own email address validation
+  and canonicalization rules.
+* *Punycode* - A host name with Unicode characters (International
+  Domain Name or IDN) needs conversion to this ASCII-encoded format
+  for DNS lookup.
+
+    "HIRO@こんにちは世界.com" => "hiro@xn--28j2a3ar1pp75ovm7c.com"
+
+Wikipedia has a great article on
+[Email Addresses](https://en.wikipedia.org/wiki/Email_address),
+much more readable than the section within
+[RFC 5322](https://tools.ietf.org/html/rfc5322#section-3.4)
+
+## Avoiding the Bad Parts of RFC Specification
+
+Following the RFC specification sounds like a good idea, until you
+learn about all the madness contained therein. This library can
+validate the RFC syntax, but this is never useful, especially when
+validating user email address submissions. By default, it validates
+to the *conventional* format.
+
+Here are a few parts of the RFC specification you should avoid:
+
+* Case-sensitive local parts: `First.Last@example.com`
+* Spaces and Special Characters: `"():;<>@[\\]`
+* Quoting and Escaping Requirements: `"first \"nickname\" last"@example.com`
+* Comment Parts: `(comment)mailbox@example.com`
+* IP and IPv6 addresses as hosts: `mailbox@[127.0.0.1]`
+* Non-ASCII (7-bit) characters in the local part: `Pelé@example.com`
+* Validation by hideous regular expressions
 
 ## Installation With Rails or Bundler
 
@@ -35,10 +133,8 @@ Require the gem inside your script.
 
 ## Usage
 
-`EmailAddress` can create a new object to work with the address,
-and also has helper to do easy transformations. See the definitions of the
-email address forms later in this README for a better understanding of rules
-used in this library.
+Use `EmailAddress` to do transformations and validations. You can also
+instantiate an object to inspect the address.
 
 These top-level helpers return edited email addresses and validation
 check.
@@ -59,7 +155,6 @@ Or you can create an instance of the email address to work with it.
     email.canonical     #=> "clarkkent@gmail.com"
     email.original      #=> "Clark.Kent+scoops@gmail.com"
     email.valid?        #=> true
-    email.errors        #=> []
 
 Here are some other methods that are available.
 
@@ -102,11 +197,12 @@ configurations you want.
     ActiveRecord::Type.register(:canonical_email_address,
                                 EmailAddress::CanonicalEmailAddressType)
 
-Assume the Users table contains the columns "email" and "unique_email".
+Assume the Users table contains the columns "email" and "canonical_email".
 We want to normalize the address in "email" and store the canonical/unique
-version in "unique_email". This code will set the canonical_email when
+version in "canonical_email". This code will set the canonical_email when
 the email attribute is assigned. With the canonical_email column,
-we can 
+we can look up the User, even it the given email address didn't exactly
+match the registered version.
 
     class User < ApplicationRecord
       attribute :email, :email_address
@@ -135,9 +231,12 @@ we can
 
 Here is how the User model works:
 
-    user = User.new(email:"Pat.Smith+registrations@gmail.com")
+    user = User.create(email:"Pat.Smith+registrations@gmail.com")
     user.email           #=> "pat.smith+registrations@gmail.com"
     user.canonical_email #=> "patsmith@gmail.com"
+    User.find_by_email("PAT.SMITH@GMAIL.COM")
+                    #=> #<User email="pat.smith+registrations@gmail.com">
+
 
 The `find_by_email` method looks up a given email address by the
 normalized form (lower case), then by the canonical form, then finally
@@ -171,6 +270,29 @@ You can compare email addresses:
     e1.same_as?(e2)   #=> true  (Matches as canonical address)
     e1.same_as?(e3)   #=> true  (Matches as redacted address)
     e1 < e2           #=> true  (Compares using normalized address)
+
+#### Matching
+
+Matching addresses by simple patterns:
+
+   * Top-Level-Domain:         .org
+   * Domain Name:              example.com
+   * Registration Name:        hotmail.   (matches any TLD)
+   * Domain Glob:              *.exampl?.com
+   * Provider Name:            google
+   * Mailbox Name or Glob:     user00*@
+   * Address or Glob:          postmaster@domain*.com
+   * Provider or Registration: msn
+
+Usage:
+
+    e = EmailAddress.new("Clark.Kent@Gmail.com")
+    e.matches?("gmail.com") #=> true
+    e.matches?("google")    #=> true
+    e.matches?(".org")      #=> false
+    e.matches?("g*com")     #=> true
+    e.matches?("gmail.")    #=> true
+    e.matches?("*kent*@")   #=> true
 
 ### Configuration
 
@@ -301,167 +423,7 @@ The value is an array of match tokens.
 * host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
 * exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
 
-#### Matching
-
-Matching addresses by simple patterns:
-
-   * Top-Level-Domain:         .org
-   * Domain Name:              example.com
-   * Registration Name:        hotmail.   (matches any TLD)
-   * Domain Glob:              *.exampl?.com
-   * Provider Name:            google
-   * Mailbox Name or Glob:     user00*@
-   * Address or Glob:          postmaster@domain*.com
-   * Provider or Registration: msn
-
-Usage:
-
-    e = EmailAddress.new("Clark.Kent@Gmail.com")
-    e.matches?("gmail.com") #=> true
-    e.matches?("google")    #=> true
-    e.matches?(".org")      #=> false
-    e.matches?("g*com")     #=> true
-    e.matches?("gmail.")    #=> true
-    e.matches?("*kent*@")   #=> true
-
-## Email Addresses
-
-#### Forms and Terminology
-
-Most of these terms were created during implemtation of this library and are
-not (yet) industry standard terms.
-
-The email address consists of the **local** part, the '@' symbol, and the
-**host** name.
-
-The local part is usually the user, mailbox, or role accont
-name. Some MTA's support an optional tag, usually after a "+" or other
-pre-defined symbol, which the user can specify anything to filter
-or sort incomgng mail. This can also be used to create unique email
-addresses that resolve to the main account.
-
-The host name is the domain name or subdomain that resolves to an IP
-Address from the DNS MX (Mail Exchanger) record. That IP should receive
-email messages on port 25 over SMTP.
-
-**Original**: email address is of the format given by the user.
-
-**Normal**: email address in with editing rules such as lower case and
-address fixing, but does not validate against any specific format.
-
-**Conventional**: Email address format that conforms the the formats supported
-by most email service providers. This removes the "Bad Parts" of the email address
-specification. This is the format this library supports by default.
-
-  * Lower-case the local and domain part.
-  * Tags are kept as they are important for the user.
-  * Remove comments and any "bad parts".
-  * International Domain Names (IDN) converted to punycode.
-
-**Relaxed**: Like conventional, but not strict about character order.
-If you find you are processing a lot of eccentric email addresses, this
-may be your format for the default provider.
-
-**Standard**: Follows the RFC specifications for email addresses.
-This keeps the "Bad Parts" as described later.
-
-  * More characters available in local part, any order (except
-    for consecutive "..")
-  * Double-Quoted local part for an extended character set
-  * Domain names are normalized (lower-case, punycode for International Domain Names (IDN).
-
-**Relaxed**: A relaxed Standard format. Essentially Standard
-form without the the Quoted extension, and a few less dangerous
-characers.
-
-**Canonical**: Used to uniquely identify the mailbox.
-Useful for locating a user who forget registering with a tag or
-with a "Bad part" in the email address.
-
-  * Based on the Conventional form.
-  * Address Tags removed.
-  * Special characters removed (dots in gmail addresses are not
-significant)
-
-**Redacted**: This form is used to store email address fingerprints
-instead of the actual addresses. Useful for treating email addresses
-as sensitive data and complying with requests to remove the address
-from your database and still maintain the state of the account.
-
-
-  * Format: "{" + sha1(canonical_address) + "}" + @domain
-  * Given an email address, the record can be found
-
-**Reference**: These form allows you to publicly interchange an address without
-revealing the actual address. While these digests are not guaranteed to be unique,
-they are industry standard methods of providing matching addresses without
-opening them up to harvesting. Use this in applications asking external
-services "Do you know this email address?" or "Remove this email address
-from your database" where providing the actual address compromises the
-address if it is not known to the external service.
-
-  * Can be the **MD5** (_default_) or **SHA1** of the normalized or canonical address
-  * Useful for "do not email" lists
-  * Useful for cookies that do not reveal the actual account
-  * Can be used to represent an alternate recipient identifier
-    in an email message to identify the email address in bounces or FBL
-    messages where the actual email address is redacted or munged for privacy.
-
-**Provider**: The name of the service providing the email either an Email Service Provider (Yahoo, Google, MSN), or ISP (Internet Service Provider) such as a
-Cable TV or Telephone company.
-
-#### The Good Parts
-
-Email Addresses are split into two parts: the `local` and `host` part,
-separated by the `@` symbol, or of the generalized format:
-
-    mailbox+tag@subdomain.domain.tld
-
-The **Mailbox** usually identifies the user, role account, or application.
-A **Tag** is any suffix for the mailbox useful for separating and filtering
-incoming email. It is usually preceded by a '+' or other character. Tags are
-not always available for a given ESP or MTA.
-
-Local Parts should consist of lower-case 7-bit ASCII alphanumeric and these characters:
-`-+'.,` It should start with and end with an alphanumeric character and
-no more than one special character should appear together.
-
-Host parts contain a lower-case version of any standard domain name.
-International Domain Names are allowed, and can be converted to
-[Punycode](http://en.wikipedia.org/wiki/Punycode),
-an encoding system of Unicode strings into the 7-bit ASCII character set.
-Domain names should be configured with MX records in DNS to receive
-email, though this is sometimes mis-configured and the A record can be
-used as a backup.
-
-This is the subset of the RFC Email Address specification that should be
-used.
-
-#### The Bad Parts
-
-Email addresses are defined and redefined in a series of RFC standards.
-Conforming to the full standards is not recommended for easily
-identifying and supporting email addresses. Among these specification,
-we reject are:
-
-* Case-sensitive local parts: `First.Last@example.com`
-* Spaces and Special Characters: `"():;<>@[\\]`
-* Quoting and Escaping Requirements: `"first \"nickname\" last"@example.com`
-* Comment Parts: `(comment)mailbox@example.com`
-* IP and IPv6 addresses as hosts: `mailbox@[127.0.0.1]`
-* Non-ASCII (7-bit) characters in the local part: `Pelé@example.com`
-* Validation by regular expressions like:
-```
-    (?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*
-      |  "(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]
-          |  \\[\x01-\x09\x0b\x0c\x0e-\x7f])*")
-    @ (?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?
-      |  \[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}
-           (?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:
-              (?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]
-              |  \\[\x01-\x09\x0b\x0c\x0e-\x7f])+)
-         \])
-```
+## Notes
 
 #### Internationalization
 
@@ -505,10 +467,6 @@ be identified if necessary.
 
 Because of these use cases, the **redact** method on the email address
 instance has been provided.
-
-## Customizing
-
-See `lib/email_address/config.rb` for more options.
 
 ## Contributing
 
