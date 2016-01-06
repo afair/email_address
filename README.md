@@ -65,7 +65,7 @@ introduces terms to distinguish types of email addresses.
 * *Munged* - An obfuscated version of the email address suitable for
   publishing on the internet, but making it non-scrapable.
 
-    Clark.Kent+scoops@gmail.com => cl*****@gm*****
+    Clark.Kent+scoops@gmail.com => cl\*\*\*\*\*@gm\*\*\*\*\*
 
 Other terms:
 
