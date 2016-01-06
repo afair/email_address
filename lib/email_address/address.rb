@@ -124,6 +124,10 @@ module EmailAddress
       self.local.redacted?
     end
 
+    def munge
+      [self.local.munge, self.host.munge].join("@")
+    end
+
     #---------------------------------------------------------------------------
     # Reference (MD5, SHA1)
     # Returns and MD5 of the canonical address form. Some cross-system systems
@@ -140,7 +144,7 @@ module EmailAddress
     # This returns the SHA1 digest (in a hex string) of the canonical email
     # address. See #md5 for more background.
     def sha1
-      Digest::SHA1.hexdigest(canonical)
+      Digest::SHA1.hexdigest(canonical + @config[:sha1_secret])
     end
 
     #---------------------------------------------------------------------------

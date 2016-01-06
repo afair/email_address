@@ -7,6 +7,11 @@ module EmailAddress
   #   :a        - DNS A Record lookup (as some domains don't specify an MX incorrectly)
   #   :off      - Do not perform DNS lookup (Test mode, network unavailable)
   #
+  # * sha1_secret         ""
+  #   This application-level secret is appended to the email_address to compute
+  #   the SHA1 Digest, making it unique to your application so it can't easily be
+  #   discovered by comparing against a known list of email/sha1 pairs.
+  #
   # For local part configuration:
   # * local_downcase:     true
   #   Downcase the local part. You probably want this for uniqueness.
@@ -83,6 +88,7 @@ module EmailAddress
   class Config
     @config = {
       dns_lookup:         :mx,  # :mx, :a, :off
+      sha1_secret:        "",
 
       local_downcase:     true,
       local_fix:          true,

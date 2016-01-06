@@ -32,7 +32,7 @@ introduces terms to distinguish types of email addresses.
     miles.o'brien@ncc-1701-d.ufp
 
 * *Relaxed* - A less strict form of Conventional, same character set,
-  must begin and end with an apha-numeric character, but order within
+  must begin and end with an alpha-numeric character, but order within
   is not enforced.
 
     aasdf-34-.z@example.com
@@ -61,6 +61,11 @@ introduces terms to distinguish types of email addresses.
   the redacted form.
 
     Clark.Kent+scoops@gmail.com => {bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com
+
+* *Munged* - An obfuscated version of the email address suitable for
+  publishing on the internet, but making it non-scrapable.
+
+    Clark.Kent+scoops@gmail.com => cl_____@gm_____
 
 Other terms:
 
@@ -145,6 +150,7 @@ check.
     EmailAddress.canonical(address) #=> "clarkkent@gmail.com"
     EmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
     EmailAddress.redact(address)    #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
+    EmailAddress.munge(address)     #=> "cl_____@gm_____"
     EmailAddress.matches?(address, 'google') #=> 'google' (true)
     EmailAddress.error("#bad@example.com") #=> "Invalid Mailbox"
 
@@ -349,6 +355,11 @@ configuration options:
     * :mx       - DNS MX Record lookup
     * :a        - DNS A Record lookup (as some domains don't specify an MX incorrectly)
     * :off      - Do not perform DNS lookup (Test mode, network unavailable)
+
+* sha1_secret -
+  This application-level secret is appended to the email_address to compute
+  the SHA1 Digest, making it unique to your application so it can't easily be
+  discovered by comparing against a known list of email/sha1 pairs.
 
 For local part configuration:
 

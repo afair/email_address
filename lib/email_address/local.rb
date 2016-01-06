@@ -248,6 +248,10 @@ module EmailAddress
       self.local = self.relax
     end
 
+    def munge
+      self.to_s.sub(/\A.*?([\p{L}\p{N}]{1,2}).*/) { |m| $1+'_____' }
+    end
+
     # Mailbox with trailing numbers removed
     def root_name
       self.mailbox =~ /\A(.+?)\d+\z/ ? $1 : self.mailbox

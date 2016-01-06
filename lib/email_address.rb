@@ -27,7 +27,7 @@ module EmailAddress
   # Given an email address, this returns nil if the email validates,
   # or a string with a small error message otherwise
   def self.error(email_address, config={})
-    e = self.new(email_address, config).error
+    self.new(email_address, config).error
   end
 
   # Shortcut to normalize the given email address in the given format
@@ -38,6 +38,12 @@ module EmailAddress
   # Shortcut to normalize the given email address
   def self.redact(email_address, config={})
     EmailAddress::Address.new(email_address, config).redact
+  end
+
+  # Shortcut to munge the given email address for web publishing
+  # returns ma_____@do_____.com
+  def self.munge(email_address, config={})
+    EmailAddress::Address.new(email_address, config).munge
   end
 
   def self.new_redacted(email_address, config={})

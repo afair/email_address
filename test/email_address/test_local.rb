@@ -88,4 +88,8 @@ class TestLocal < MiniTest::Test
     assert_equal 'user*@',  a.matches?('user*@')
   end
 
+  def test_munge
+    assert_equal "us_____", EmailAddress::Local.new("User+tag").munge
+  end
+
 end
