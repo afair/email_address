@@ -55,7 +55,7 @@ module EmailAddress
     end
 
     def munge
-      self.host_name.sub(/\A.*?([\p{L}\p{N}]{1,2}).*/) { |m| $1+'_____' }
+      self.host_name.sub(/\A(.{1,2}).*/) { |m| $1 + @config[:munge_string] }
     end
 
     ############################################################################

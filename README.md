@@ -65,7 +65,7 @@ introduces terms to distinguish types of email addresses.
 * *Munged* - An obfuscated version of the email address suitable for
   publishing on the internet, but making it non-scrapable.
 
-    Clark.Kent+scoops@gmail.com => cl_____@gm_____
+    Clark.Kent+scoops@gmail.com => cl*****@gm*****
 
 Other terms:
 
@@ -150,7 +150,7 @@ check.
     EmailAddress.canonical(address) #=> "clarkkent@gmail.com"
     EmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
     EmailAddress.redact(address)    #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
-    EmailAddress.munge(address)     #=> "cl_____@gm_____"
+    EmailAddress.munge(address)     #=> "cl*****@gm*****"
     EmailAddress.matches?(address, 'google') #=> 'google' (true)
     EmailAddress.error("#bad@example.com") #=> "Invalid Mailbox"
 
@@ -360,6 +360,8 @@ configuration options:
   This application-level secret is appended to the email_address to compute
   the SHA1 Digest, making it unique to your application so it can't easily be
   discovered by comparing against a known list of email/sha1 pairs.
+
+* munge_string - "*****", the string to replace into munged addresses.
 
 For local part configuration:
 

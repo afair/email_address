@@ -89,6 +89,7 @@ module EmailAddress
     @config = {
       dns_lookup:         :mx,  # :mx, :a, :off
       sha1_secret:        "",
+      munge_string:       "*****",
 
       local_downcase:     true,
       local_fix:          true,

@@ -6,7 +6,7 @@ class TestAddress < Minitest::Test
     a = EmailAddress.new("User+tag@example.com")
     assert_equal "user+tag", a.local.to_s
     assert_equal "example.com", a.host.to_s
-    assert_equal "us_____@ex_____", a.munge
+    assert_equal "us*****@ex*****", a.munge
     assert_equal :default, a.provider
   end
 

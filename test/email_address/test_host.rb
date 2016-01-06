@@ -9,7 +9,7 @@ class TestHost < MiniTest::Test
     assert_equal "example.com", a.domain_name
     assert_equal "example", a.registration_name
     assert_equal "com", a.tld
-    assert_equal "ex_____", a.munge
+    assert_equal "ex*****", a.munge
     assert_equal nil, a.subdomains
   end
 

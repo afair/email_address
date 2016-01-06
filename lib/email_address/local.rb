@@ -110,7 +110,7 @@ module EmailAddress
     #   local_downcase, local_encoding, local_parse local_size tag_separator
     #   mailbox_canonical, mailbox_size
     def initialize(local, config={})
-      self.config   = config
+      self.config   = config.empty? ? EmailAddress::Config.all_settings : config
       self.local    = local
     end
 
@@ -249,7 +249,7 @@ module EmailAddress
     end
 
     def munge
-      self.to_s.sub(/\A.*?([\p{L}\p{N}]{1,2}).*/) { |m| $1+'_____' }
+      self.to_s.sub(/\A(.{1,2}).*/) { |m| $1 + @config[:munge_string] }
     end
 
     # Mailbox with trailing numbers removed

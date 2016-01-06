@@ -15,10 +15,10 @@ class TestLocal < MiniTest::Test
       %Q{" "},
       %Q{"very.(),:;<>[]\\".VERY.\\"very@\\ \\"very\\".unusual"},
       %Q{"()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a"},
-      %{token." ".token},
-      %{abc."defghi".xyz},
+      %Q{token." ".token},
+      %Q{abc."defghi".xyz},
     ].each do |local|
-      assert EmailAddress::Local.new(local).standard?, local
+      assert EmailAddress::Local.new(local, local_fix: false).standard?, local
     end
   end
 
@@ -34,7 +34,7 @@ class TestLocal < MiniTest::Test
       %Q{invalid },
       %Q{abc"defghi"xyz},
     ].each do |local|
-      assert ! EmailAddress::Local.new(local).standard?, local
+      assert_equal false, EmailAddress::Local.new(local, local_fix: false).standard?, local
     end
   end
 
@@ -58,9 +58,9 @@ class TestLocal < MiniTest::Test
     end
   end
 
-  def test_invalid_conventinal
-    (%w( first..last +leading trailing+ o%brien) + ["first space"]).each do |local|
-      assert ! EmailAddress::Local.new(local).conventional?, local
+  def test_invalid_conventional
+    (%w( first;.last +leading trailing+ o%brien) + ["first space"]).each do |local|
+      assert ! EmailAddress::Local.new(local, local_fix:false).conventional?, local
     end
   end
 
@@ -89,7 +89,7 @@ class TestLocal < MiniTest::Test
   end
 
   def test_munge
-    assert_equal "us_____", EmailAddress::Local.new("User+tag").munge
+    assert_equal "us*****", EmailAddress::Local.new("User+tag").munge
   end
 
 end
