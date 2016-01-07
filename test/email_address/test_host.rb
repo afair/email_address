@@ -61,6 +61,15 @@ class TestHost < MiniTest::Test
     assert_equal true, h.valid?
   end
 
+  def test_comment
+    h = EmailAddress::Host.new("(oops)gmail.com")
+    assert_equal 'gmail.com', h.to_s
+    assert_equal 'oops', h.comment
+    h = EmailAddress::Host.new("gmail.com(oops)")
+    assert_equal 'gmail.com', h.to_s
+    assert_equal 'oops', h.comment
+  end
+
   def test_matches
     h = EmailAddress::Host.new("yahoo.co.jp")
     assert_equal false, h.matches?("gmail.com")
@@ -69,5 +78,13 @@ class TestHost < MiniTest::Test
     assert_equal '.jp', h.matches?(".jp")
     assert_equal 'yahoo.', h.matches?("yahoo.")
     assert_equal 'yah*.jp', h.matches?("yah*.jp")
+  end
+
+  def test_regexen
+    assert "asdf.com".match EmailAddress::Host::CANONICAL_HOST_REGEX
+    assert "xn--5ca.com".match EmailAddress::Host::CANONICAL_HOST_REGEX
+    assert "[127.0.0.1]".match EmailAddress::Host::STANDARD_HOST_REGEX
+    assert "[IPv6:2001:dead::1]".match EmailAddress::Host::STANDARD_HOST_REGEX
+    assert_equal nil, "[256.0.0.1]".match(EmailAddress::Host::STANDARD_HOST_REGEX)
   end
 end

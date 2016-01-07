@@ -2,9 +2,16 @@ require 'digest/sha1'
 require 'digest/md5'
 
 module EmailAddress
+  # Implements the Email Address container, which hold the Local
+  # (EmailAddress::Local) and Host (Email::AddressHost) parts.
   class Address
     include Comparable
     attr_accessor :original, :local, :host, :config, :error
+
+    CONVENTIONAL_REGEX = /\A#{::EmailAddress::Local::CONVENTIONAL_MAILBOX_WITHIN}
+                           @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
+    STANDARD_REGEX     = /\A#{::EmailAddress::Local::STANDARD_LOCAL_WITHIN}
+                           @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
 
     # Given an email address of the form "local@hostname", this sets up the
     # instance, and initializes the address to the "normalized" format of the
@@ -96,46 +103,41 @@ module EmailAddress
       "#<EmailAddress::Address:0x#{self.object_id.to_s(16)} address=\"#{self.to_s}\">"
     end
 
-    #---------------------------------------------------------------------------
-    # Canonical
     # Returns the canonical email address according to the provider
     # uniqueness rules. Usually, this downcases the address, removes
     # spaves and comments and tags, and any extraneous part of the address
     # not considered a unique account by the provider.
-    #---------------------------------------------------------------------------
     def canonical
       [self.local.canonical, @host.canonical].join('@')
     end
 
+    # True if the given address is already in it's canonical form.
     def canonical?
       self.canonical == self.to_s
     end
 
-    #---------------------------------------------------------------------------
     # Returns the redacted form of the address
     # This format is defined by this libaray, and may change as usage increases.
-    #---------------------------------------------------------------------------
     def redact
       return self.to_s if self.local.redacted?
       %Q({#{self.sha1}}@#{self.host.to_s})
     end
 
+    # True if the address is already in the redacted state.
     def redacted?
       self.local.redacted?
     end
 
+    # Returns the munged form of the address, by default "mailbox@domain.tld"
+    # returns "ma*****@do*****".
     def munge
       [self.local.munge, self.host.munge].join("@")
     end
 
-    #---------------------------------------------------------------------------
-    # Reference (MD5, SHA1)
     # Returns and MD5 of the canonical address form. Some cross-system systems
     # use the email address MD5 instead of the actual address to refer to the
     # same shared user identity without exposing the actual address when it
     # is not known in common.
-    #---------------------------------------------------------------------------
-
     def reference
       Digest::MD5.hexdigest(self.canonical)
     end
@@ -149,10 +151,10 @@ module EmailAddress
 
     #---------------------------------------------------------------------------
     # Comparisons & Matching
-    # Equal matches the normalized version of each address. Use the Threequal to check
-    # for match on canonical or redacted versions of addresses
     #---------------------------------------------------------------------------
 
+    # Equal matches the normalized version of each address. Use the Threequal to check
+    # for match on canonical or redacted versions of addresses
     def ==(other_email)
       self.to_s == other_email.to_s
     end
@@ -196,9 +198,10 @@ module EmailAddress
 
     #---------------------------------------------------------------------------
     # Validation
+    #---------------------------------------------------------------------------
+
     # Returns true if this address is considered valid according to the format
     # configured for its provider, It test the normalized form.
-    #---------------------------------------------------------------------------
     def valid?(options={})
       self.error = nil
       unless self.local.valid?

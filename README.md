@@ -113,7 +113,9 @@ Here are a few parts of the RFC specification you should avoid:
 * Comment Parts: `(comment)mailbox@example.com`
 * IP and IPv6 addresses as hosts: `mailbox@[127.0.0.1]`
 * Non-ASCII (7-bit) characters in the local part: `Pelé@example.com`
-* Validation by hideous regular expressions
+* Validation by voodoo regular expressions
+* Gmail allows ".." in addresses since they are not meaningful, but
+  the standard does not.
 
 ## Installation With Rails or Bundler
 

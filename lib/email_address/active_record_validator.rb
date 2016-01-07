@@ -8,10 +8,10 @@ module EmailAddress
   #    validates_with EmailAddress::ActiveRecordValidator, field: :name
   #
   # Options:
-  #         field: email,
-  #         fields: [:email1, :email2]
-  # Default field:
-  #         :email or :email_address (first found)
+  # * field: email,
+  # * fields: [:email1, :email2]
+  #
+  # Default field: :email or :email_address (first found)
   #
   class ActiveRecordValidator < ActiveModel::Validator
 

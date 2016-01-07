@@ -68,4 +68,11 @@ class TestAddress < Minitest::Test
     assert_equal false, e.valid? # localhost not allowed by default
   end
 
+  def test_regexen
+    assert "First.Last+TAG@example.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
+    assert "First.Last+TAG@example.com".match(EmailAddress::Address::STANDARD_REGEX)
+    assert_equal nil, "First.Last+TAGexample.com".match(EmailAddress::Address::STANDARD_REGEX)
+    assert_equal nil, "First#Last+TAGexample.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
+  end
+
 end

@@ -4,38 +4,92 @@ require 'netaddr'
 
 module EmailAddress
   ##############################################################################
-  # Hostname management for the email address
-  # IPv6/IPv6: [128.0.0.1], [IPv6:2001:db8:1ff::a0b:dbd0]
-  # Comments: (comment)example.com, example.com(comment)
-  # Internationalized: Unicode to Punycode
-  # Length: up to 255 characters
-  # Parts for: subdomain.example.co.uk
-  #     host_name:         "subdomain.example.co.uk"
-  #     dns_name:          punycode("subdomain.example.co.uk")
-  #     subdomain:         "subdomain"
-  #     registration_name: "example"
-  #     domain_name:       "example.co.uk"
-  #     tld:               "uk"
-  #     tld2:              "co.uk"
-  #     ip_address:        nil or "ipaddress" used in [ipaddress] syntax
+  # The EmailAddress Host is found on the right-hand side of the "@" symbol.
+  # It can be:
+  # * Host name (domain name with optional subdomain)
+  # * International Domain Name, in Unicode (Display) or Punycode (DNS) format
+  # * IP Address format, either IPv4 or IPv6, enclosed in square brackets.
+  #   This is not Conventionally supported, but is part of the specification.
+  # * It can contain an optional comment, enclosed in parenthesis, either at
+  #   beginning or ending of the host name. This is not well defined, so it not
+  #   supported here, expect to parse it off, if found.
+  #
+  # For matching and query capabilities, the host name is parsed into these
+  # parts (with example data for "subdomain.example.co.uk"):
+  # * host_name:         "subdomain.example.co.uk"
+  # * dns_name:          punycode("subdomain.example.co.uk")
+  # * subdomain:         "subdomain"
+  # * registration_name: "example"
+  # * domain_name:       "example.co.uk"
+  # * tld:               "uk"
+  # * tld2:              "co.uk" (the 1 or 2 term TLD we could guess)
+  # * ip_address:        nil or "ipaddress" used in [ipaddress] syntax
+  #
+  # The provider (Email Service Provider or ESP) is looked up according to the
+  # provider configuration rules, setting the config attribute to values of
+  # that provider.
   ##############################################################################
   class Host
     attr_accessor :host_name, :dns_name, :domain_name, :registration_name,
-                  :tld, :tld2, :subdomains, :ip_address, :config, :provider
+                  :tld, :tld2, :subdomains, :ip_address, :config, :provider,
+                  :comment
+    MAX_HOST_LENGTH = 255
+
+    # Sometimes, you just need a Regexp...
+    DNS_HOST_REGEX  = / [\p{L}\p{N}]+ (?: (?: \-{1,2} | \.) [\p{L}\p{N}]+ )*/x
+
+    # The IPv4 and IPv6 were lifted from Resolv::IPv?::Regex and tweaked to not
+    # \A...\z anchor at the edges.
+    IPv6_HOST_REGEX = /\[IPv6:
+      (?: (?:(?x-mi:
+      (?:[0-9A-Fa-f]{1,4}:){7}
+         [0-9A-Fa-f]{1,4}
+      )) |
+      (?:(?x-mi:
+      (?: (?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?) ::
+      (?: (?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)
+      )) |
+      (?:(?x-mi:
+      (?: (?:[0-9A-Fa-f]{1,4}:){6,6})
+      (?: \d+)\.(?: \d+)\.(?: \d+)\.(?: \d+)
+      )) |
+      (?:(?x-mi:
+      (?: (?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?) ::
+      (?: (?:[0-9A-Fa-f]{1,4}:)*)
+      (?: \d+)\.(?: \d+)\.(?: \d+)\.(?: \d+)
+      )))\]/ix
+
+    IPv4_HOST_REGEX = /\[((?x-mi:0
+               |1(?:[0-9][0-9]?)?
+               |2(?:[0-4][0-9]?|5[0-5]?|[6-9])?
+               |[3-9][0-9]?))\.((?x-mi:0
+               |1(?:[0-9][0-9]?)?
+               |2(?:[0-4][0-9]?|5[0-5]?|[6-9])?
+               |[3-9][0-9]?))\.((?x-mi:0
+               |1(?:[0-9][0-9]?)?
+               |2(?:[0-4][0-9]?|5[0-5]?|[6-9])?
+               |[3-9][0-9]?))\.((?x-mi:0
+               |1(?:[0-9][0-9]?)?
+               |2(?:[0-4][0-9]?|5[0-5]?|[6-9])?
+               |[3-9][0-9]?))\]/x
+
+    # Matches conventional host name and punycode: domain.tld, x--punycode.tld
+    CANONICAL_HOST_REGEX = /\A #{DNS_HOST_REGEX} \z/x
+
+    # Matches Host forms: DNS name, IPv4, or IPv6 formats
+    STANDARD_HOST_REGEX = /\A (?: #{DNS_HOST_REGEX}
+                              | #{IPv4_HOST_REGEX} | #{IPv6_HOST_REGEX}) \z/ix
 
     # host name -
-    #   * full domain name after @ for email types
-    #   * fully-qualified domain name
-    # host type -
-    #   :email - email address domain
-    #   :mx    - email exchanger domain
+    #   * host type - :email for an email host, :mx for exchanger host
     def initialize(host_name, config={})
-      @original  = host_name ||= ''
-      @host_type = config[:host_type] || :email
-      @config    = config
+      @original            = host_name ||= ''
+      config[:host_type] ||= :email
+      @config              = config
       parse(host_name)
     end
 
+    # Returns the String representation of the host name (or IP)
     def name
       if self.ipv4?
         "[#{self.ip_address}]"
@@ -54,6 +108,8 @@ module EmailAddress
       self.dns_name
     end
 
+    # Returns the munged version of the name, replacing everything after the
+    # initial two characters with "*****" or the configured "munge_string".
     def munge
       self.host_name.sub(/\A(.{1,2}).*/) { |m| $1 + @config[:munge_string] }
     end
@@ -62,7 +118,10 @@ module EmailAddress
     # Parsing
     ############################################################################
 
-    def parse(host)
+
+    def parse(host) # :nodoc:
+      host = self.parse_comment(host)
+
       if host =~ /\A\[IPv6:(.+)\]/i
         self.ip_address = $1
       elsif host =~ /\A\[(\d{1,3}(\.\d{1,3}){3})\]/ # IPv4
@@ -70,6 +129,16 @@ module EmailAddress
       else
         self.host_name = host
       end
+    end
+
+    def parse_comment(host) # :nodoc:
+      if host =~ /\A\((.+?)\)(.+)/ # (comment)domain.tld
+        self.comment, host = $1, $2
+      end
+      if host =~ /\A(.+)\((.+?)\)\z/ # domain.tld(comment)
+        host, self.comment = $1, $2
+      end
+      host
     end
 
     def host_name=(name)
@@ -99,7 +168,7 @@ module EmailAddress
       end
     end
 
-    def find_provider
+    def find_provider # :nodoc:
       return self.provider if self.provider
 
       EmailAddress::Config.providers.each do |provider, config|
@@ -119,7 +188,7 @@ module EmailAddress
       self.provider ||= self.set_provider(:default)
     end
 
-    def set_provider(name, provider_config={})
+    def set_provider(name, provider_config={}) # :nodoc:
       self.config = EmailAddress::Config.all_settings(provider_config, @config)
       self.provider = name
     end
@@ -201,6 +270,8 @@ module EmailAddress
       false
     end
 
+    # True if the host is an IP Address form, and that address matches
+    # the passed CIDR string ("10.9.8.0/24" or "2001:..../64")
     def ip_matches?(cidr)
       return false unless self.ip_address
       return cidr if !cidr.include?("/") && cidr == self.ip_address
@@ -218,10 +289,12 @@ module EmailAddress
     # DNS
     ############################################################################
 
+    # True if the :dns_lookup setting is enabled
     def dns_enabled?
       EmailAddress::Config.setting(:dns_lookup)
     end
 
+    # True if the host name has a DNS A Record
     def has_dns_a_record?
       dns_a_record.size > 0 ? true : false
     end
@@ -233,8 +306,10 @@ module EmailAddress
       @_dns_a_record ||= []
     end
 
+    # Returns an array of EmailAddress::Exchanger hosts configured in DNS.
+    # The array will be empty if none are configured.
     def exchangers
-      return nil if @host_type != :email || !self.dns_enabled?
+      return nil if @config[:host_type] != :email || !self.dns_enabled?
       @_exchangers ||= EmailAddress::Exchanger.cached(self.dns_name)
     end
 
@@ -260,14 +335,17 @@ module EmailAddress
       fields
     end
 
+    # Returns a hash of the domain's DMARC (https://en.wikipedia.org/wiki/DMARC)
+    # settings.
     def dmarc
-      self.txt_hash("_dmarc." + self.dns_name)
+      self.dns_name ? self.txt_hash("_dmarc." + self.dns_name) : {}
     end
 
     ############################################################################
     # Validation
     ############################################################################
 
+    # Returns true if the host name is valid according to the current configuration
     def valid?(rule=@config[:dns_lookup]||:mx)
       if self.provider != :default # well known
         true
@@ -278,14 +356,19 @@ module EmailAddress
       elsif rule == :a
         self.has_dns_a_record?
       elsif rule == :off
-        true
+        self.to_s.size <= MAX_HOST_LENGTH
       else
         false
       end
     end
 
+    # Returns true if the IP address given in that form of the host name
+    # is a potentially valid IP address. It does not check if the address
+    # is reachable.
     def valid_ip?
-      if self.ip_address.include?(":")
+      if self.ip_address.nil?
+        false
+      elsif self.ip_address.include?(":")
         self.ip_address =~ Resolv::IPv6::Regex
       elsif self.ip_address.include?(".")
         self.ip_address =~ Resolv::IPv4::Regex

@@ -76,39 +76,26 @@ module EmailAddress
     ROLE_MAILBOXES     = %w(staff office orders billing careers jobs) # Not from RFC-2142
     SPECIAL_MAILBOXES  = BUSINESS_MAILBOXES + NETWORK_MAILBOXES + SERVICE_MAILBOXES +
                          SYSTEM_MAILBOXES + ROLE_MAILBOXES
+    STANDARD_MAX_SIZE  = 64
 
     # Conventional : word([.-+'_]word)*
-    CONVENTIONAL_MAILBOX_REGEX = /\A[\p{L}\p{N}]+([\.\-\+\'_][\p{L}\p{N}]+)*\z/
+    CONVENTIONAL_MAILBOX_REGEX  = /\A [\p{L}\p{N}]+ ( [\.\-\+\'_] [\p{L}\p{N}]+ )* \z/x
+    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}]+ ( [\.\-\+\'_] [\p{L}\p{N}]+ )*/x
 
     # Relaxed: same characters, relaxed order
     RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}]+ ( [\.\-\+\'_]+ [\p{L}\p{N}]+ )* \z/x
 
-    # RFC5322 Non-Quoted: ALPHA DIGIT ! # $ % & ' * + - / = ? ^ _ ` { | } ~
-    #STANDARD_MAILBOX_REGEX = /\A[\p{L}\p{N}\.\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~]+\z/
-
     # RFC5322 Token: token."token".token (dot-separated tokens)
     #   Quoted Token can also have: SPACE \" \\ ( ) , : ; < > @ [ \ ] .
-    STANDARD_TOKEN_REGEX =
-      /\A
-          ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-            | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" )
-          ( \.  ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-                  | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" ) )*
-       \z/x
-
-    # RFC5322 Quoted: "( \[\ " ] | [( ) < > [ ] : ; @ , .] | SPACE | STANDARD_MAILBOX_CHARACTERS)+"
-    #STANDARD_QUOTED_MAILBOX_REGEX =
-    #  /\A \" ( \\[\" \\]
-    #         | [\( \) < > \[ \] : ; @ , \.
-    #            \x20 \p{L} \p{N} ! # \$ % & ' \* \+ \- \/ = \? \^ _ ` \{ \| \} ~] )+
-    #      \" \z/x
+    STANDARD_LOCAL_WITHIN = /
+      ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
+        | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" )
+      ( \.  ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
+              | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" ) )* /x
+    STANDARD_LOCAL_REGEX = /\A #{STANDARD_LOCAL_WITHIN} \z/x
 
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
-    STANDARD_MAX_SIZE = 64
 
-    # local config options:
-    #   local_downcase, local_encoding, local_parse local_size tag_separator
-    #   mailbox_canonical, mailbox_size
     def initialize(local, config={})
       self.config   = config.empty? ? EmailAddress::Config.all_settings : config
       self.local    = local
@@ -161,22 +148,27 @@ module EmailAddress
       raw.split(separator, 2)
     end
 
+    # True if the the value contains only Latin characters (7-bit ASCII)
     def ascii?
       ! self.unicode?
     end
 
+    # True if the the value contains non-Latin Unicde characters
     def unicode?
       self.local =~ /[^\p{InBasic_Latin}]/ ? true : false
     end
 
+    # Returns true if the value matches the Redacted format
     def redacted?
       self.local =~ REDACTED_REGEX ? true : false
     end
 
+    # Returns true if the value matches the Redacted format
     def self.redacted?(local)
       local =~ REDACTED_REGEX ? true : false
     end
 
+    # Is the address for a common system or business role account?
     def special?
       SPECIAL_MAILBOXES.include?(mailbox)
     end
@@ -185,6 +177,7 @@ module EmailAddress
       self.format
     end
 
+    # Builds the local string according to configurations
     def format(form=@config[:local_format]||:conventional)
       if @config[:local_format].is_a?(Proc)
         @config[:local_format].call(self)
@@ -199,6 +192,7 @@ module EmailAddress
       end
     end
 
+    # Returns a conventional form of the address
     def conventional
       if self.tag
         [self.mailbox, self.tag].join(@config[:tag_separator])
@@ -207,6 +201,7 @@ module EmailAddress
       end
     end
 
+    # Returns a canonical form of the address
     def canonical
       if @config[:mailbox_canonical]
         @config[:mailbox_canonical].call(self.mailbox)
@@ -235,10 +230,12 @@ module EmailAddress
       form
     end
 
+    # Sets the part to be the conventional form
     def conventional!
       self.local = self.conventional
     end
 
+    # Sets the part to be the canonical form
     def canonical!
       self.local = self.canonical
     end
@@ -248,6 +245,7 @@ module EmailAddress
       self.local = self.relax
     end
 
+    # Returns the munged form of the address, like "ma*****"
     def munge
       self.to_s.sub(/\A(.{1,2}).*/) { |m| $1 + @config[:munge_string] }
     end
@@ -261,6 +259,7 @@ module EmailAddress
     # Validations
     ############################################################################
 
+    # True if the part is valid according to the configurations
     def valid?(format=@config[:local_format]||:conventional)
       if @config[:mailbox_validator].is_a?(Proc)
         @config[:mailbox_validator].call(self.mailbox, self.tag)
@@ -281,6 +280,7 @@ module EmailAddress
       end
     end
 
+    # Returns the format of the address
     def format?
       # if :custom
       if self.conventional?
@@ -309,6 +309,7 @@ module EmailAddress
       true
     end
 
+    # True if the part matches the conventional format
     def conventional?
       self.syntax = :invalid
       self.local =~ CONVENTIONAL_MAILBOX_REGEX or return false
@@ -331,11 +332,12 @@ module EmailAddress
       end
     end
 
+    # True if the part matches the RFC standard format
     def standard?
       self.syntax = :invalid
       self.valid_size? or return false
       self.valid_encoding? or return false
-      if self.local =~ STANDARD_TOKEN_REGEX
+      if self.local =~ STANDARD_LOCAL_REGEX
         self.syntax = :standard
         true
       else
