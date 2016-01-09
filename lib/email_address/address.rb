@@ -87,7 +87,7 @@ module EmailAddress
     ############################################################################
 
     # Returns the string representation of the normalized email address.
-    def to_s
+    def normal
       if !@original
         @original
       elsif self.local.to_s.size == 0
@@ -98,6 +98,7 @@ module EmailAddress
         "#{self.local.to_s}@#{self.host.to_s}"
       end
     end
+    alias :to_s :normal
 
     def inspect
       "#<EmailAddress::Address:0x#{self.object_id.to_s(16)} address=\"#{self.to_s}\">"

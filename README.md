@@ -2,15 +2,27 @@
 
 [![Gem Version](https://badge.fury.io/rb/email_address.svg)](http://rubygems.org/gems/email_address)
 
-This gem provides a ruby language library for working with and validating email addresses.
+The `email_address` gem provides a ruby language library for working
+with email addresses.
+
 By default, it validates against conventional usage,
 the format preferred for user email addresses.
 It can be configured to validate against RFC "Standard" formats,
 common email service provider formats, and perform DNS validation.
 
-Warning: Version 0.1.0 contains significant API and internal changes over the 0.0.3
+Using `email_address` to validate user email addresses results in
+fewer "false positives" due to typing errors and gibberish data.
+It validates syntax more strictly for popular email providers,
+and can deal with gmail's "optional dots" in addresses.
+
+It provides Active Record (Rails) extensions, including an
+address validator and attributes API custom datatypes.
+
+*Note:* Version 0.1.0 contains significant API and internal changes over the 0.0.3
 version. If you have been using the 0.0.x series of the gem, you may
-want to stick with that.
+want to continue using with your current version.
+
+Requires Ruby 2.0 or later.
 
 ## Background
 
@@ -63,7 +75,8 @@ introduces terms to distinguish types of email addresses.
     Clark.Kent+scoops@gmail.com => {bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com
 
 * *Munged* - An obfuscated version of the email address suitable for
-  publishing on the internet, but making it non-scrapable.
+  publishing on the internet, where email address harvesting
+  could occur.
 
     Clark.Kent+scoops@gmail.com => cl\*\*\*\*\*@gm\*\*\*\*\*
 
@@ -159,8 +172,7 @@ check.
 Or you can create an instance of the email address to work with it.
 
     email = EmailAddress.new(address) #=> #<EmailAddress::Address:0x007fe6ee150540 ...>
-    email.to_s          #=> "clark.kent+scoops@gmail.com"
-    email.normalize     #=> "clark.kent+scoops@gmail.com"
+    email.normal        #=> "clark.kent+scoops@gmail.com"
     email.canonical     #=> "clarkkent@gmail.com"
     email.original      #=> "Clark.Kent+scoops@gmail.com"
     email.valid?        #=> true
