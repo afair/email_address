@@ -12,9 +12,11 @@ class TestAR < MiniTest::Test
   end
 
   def test_datatype
-    user = User.new(email:"Pat.Jones+ASDF@GMAIL.com")
-    assert_equal 'pat.jones+asdf@gmail.com', user.email
-    assert_equal 'patjones@gmail.com', user.canonical_email
+    if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
+      user = User.new(email:"Pat.Jones+ASDF@GMAIL.com")
+      assert_equal 'pat.jones+asdf@gmail.com', user.email
+      assert_equal 'patjones@gmail.com', user.canonical_email
+    end
   end
 
 end

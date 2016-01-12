@@ -1,30 +1,52 @@
 ################################################################################
 # ActiveRecord Test Setup ...
-require 'sqlite3'
+################################################################################
 
 class ApplicationRecord < ActiveRecord::Base
   self.abstract_class = true
 end
 
-ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
-ActiveRecord::Type.register(:canonical_email_address,
-                            EmailAddress::CanonicalEmailAddressType)
+dbfile = ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db"
+File.unlink(dbfile) if File.exist?(dbfile)
 
-if File.exist?( ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db")
-  File.unlink( ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db")
+# Connection: JRuby vs. MRI
+if RUBY_PLATFORM == 'java' # jruby
+  require 'jdbc/sqlite3'
+  require 'java'
+  require 'activerecord-jdbcsqlite3-adapter'
+  Jdbc::SQLite3.load_driver
+  ActiveRecord::Base.establish_connection(
+    :adapter  => 'jdbc',
+    :driver   => "org.sqlite.JDBC",
+    :url      => "jdbc:sqlite:" + dbfile
+  )
+else
+  require 'sqlite3'
+  ActiveRecord::Base.establish_connection(
+    :adapter  => 'sqlite3',
+    :database => dbfile
+  )
 end
-ActiveRecord::Base.establish_connection(
-  :adapter  => "sqlite3",
-  :database => ENV['EMAIL_ADDRESS_TEST_DB'] || "/tmp/email_address.gem.db"
-)
 
-ApplicationRecord.connection.execute("create table users (
-                                     email varchar, canonical_email varchar)")
+ApplicationRecord.connection.execute(
+  "create table users ( email varchar, canonical_email varchar)")
+
+if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
+  ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
+  ActiveRecord::Type.register(:canonical_email_address,
+                              EmailAddress::CanonicalEmailAddressType)
+end
+
+################################################################################
+# User Model
 ################################################################################
 
 class User < ApplicationRecord
-  attribute :email, :email_address
-  attribute :canonical_email, :canonical_email_address
+
+  if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
+    attribute :email, :email_address
+    attribute :canonical_email, :canonical_email_address
+  end
 
   validates_with EmailAddress::ActiveRecordValidator,
     fields: %i(email canonical_email)

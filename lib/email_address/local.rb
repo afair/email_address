@@ -155,7 +155,7 @@ module EmailAddress
 
     # True if the the value contains non-Latin Unicde characters
     def unicode?
-      self.local =~ /[^\p{InBasic_Latin}]/ ? true : false
+      self.local =~ /[^\p{InBasicLatin}]/ ? true : false
     end
 
     # Returns true if the value matches the Redacted format
