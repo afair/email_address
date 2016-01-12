@@ -8,10 +8,10 @@ module EmailAddress
   #    validates_with EmailAddress::ActiveRecordValidator, field: :name
   #
   # Options:
-  #         field: email,
-  #         fields: [:email1, :email2]
-  # Default field:
-  #         :email or :email_address (first found)
+  # * field: email,
+  # * fields: [:email1, :email2]
+  #
+  # Default field: :email or :email_address (first found)
   #
   class ActiveRecordValidator < ActiveModel::Validator
 
@@ -23,7 +23,7 @@ module EmailAddress
       if @opt[:fields]
         @opt[:fields].each {|f| validate_email(r, f) }
       elsif @opt[:field]
-        validate_email(r, opt[:field])
+        validate_email(r, @opt[:field])
       elsif r.respond_to? :email
         validate_email(r, :email)
       elsif r.respond_to? :email_address

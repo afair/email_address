@@ -1,13 +1,28 @@
 require_relative '../test_helper'
 
 class TestConfig < MiniTest::Test
-  def test_setup
-    EmailAddress::Config.setup do
-      provider :disposable, domains:%w(mailenator)
-      option   :downcase_mailboxes, true
-    end
-    assert_equal true, EmailAddress::Config.providers.has_key?(:disposable)
-    assert_equal true, EmailAddress::Config.options[:downcase_mailboxes]
+  def test_setting
+    assert_equal :mx,  EmailAddress::Config.setting(:dns_lookup)
+    assert_equal :off, EmailAddress::Config.setting(:dns_lookup, :off)
+    assert_equal :off, EmailAddress::Config.setting(:dns_lookup)
+    EmailAddress::Config.setting(:dns_lookup, :mx)
   end
-  
+
+  def test_configure
+    assert_equal :mx,   EmailAddress::Config.setting(:dns_lookup)
+    assert_equal true,  EmailAddress::Config.setting(:local_downcase)
+    EmailAddress::Config.configure(local_downcase:false, dns_lookup: :off)
+    assert_equal :off,  EmailAddress::Config.setting(:dns_lookup)
+    assert_equal false, EmailAddress::Config.setting(:local_downcase)
+    EmailAddress::Config.configure(local_downcase:true, dns_lookup: :mx)
+  end
+
+  def test_provider
+    assert_equal nil, EmailAddress::Config.provider(:github)
+    EmailAddress::Config.provider(:github, host_match: %w(github.com), local_format: :standard)
+    assert_equal :standard, EmailAddress::Config.provider(:github)[:local_format]
+    assert_equal :github, EmailAddress::Host.new("github.com").provider
+    EmailAddress::Config.providers.delete(:github)
+    assert_equal nil, EmailAddress::Config.provider(:github)
+  end
 end

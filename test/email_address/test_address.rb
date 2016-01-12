@@ -6,47 +6,73 @@ class TestAddress < Minitest::Test
     a = EmailAddress.new("User+tag@example.com")
     assert_equal "user+tag", a.local.to_s
     assert_equal "example.com", a.host.to_s
-    assert_equal :unknown, a.provider
+    assert_equal "us*****@ex*****", a.munge
+    assert_equal :default, a.provider
   end
 
-  def test_noramlize
-    a = EmailAddress.new("User+tag@Example.com")
-    assert_equal "user+tag@example.com", a.normalize
+  # LOCAL
+  def test_local
+    a = EmailAddress.new("User+tag@example.com")
+    assert_equal "user", a.mailbox
+    assert_equal "user+tag", a.left
+    assert_equal "tag", a.tag
   end
 
-  def test_canonical
-    a = EmailAddress.new("User+tag@Example.com")
+  # HOST
+  def test_host
+    a = EmailAddress.new("User+tag@example.com")
+    assert_equal "example.com", a.hostname
+    #assert_equal :default, a.provider
+  end
+
+  # ADDRESS
+  def test_forms
+    a = EmailAddress.new("User+tag@example.com")
+    assert_equal "user+tag@example.com", a.to_s
     assert_equal "user@example.com", a.canonical
-    a = EmailAddress.new("first.last+tag@gmail.com")
-    assert_equal "firstlast@gmail.com", a.canonical
+    assert_equal "{63a710569261a24b3766275b7000ce8d7b32e2f7}@example.com", a.redact
+    assert_equal "b58996c504c5638798eb6b511e6f49af", a.reference
   end
 
-  def test_digest
-    a = EmailAddress.new("User+tag@Example.com")
-    assert_equal "b58996c504c5638798eb6b511e6f49af", a.md5
-    assert_equal "63a710569261a24b3766275b7000ce8d7b32e2f7", a.sha1
-    assert_equal "63a710569261a24b3766275b7000ce8d7b32e2f7@example.com", a.redact
+  # COMPARISON & MATCHING
+  def test_compare
+    a = ("User+tag@example.com")
+    #e = EmailAddress.new("user@example.com")
+    n = EmailAddress.new(a)
+    c = EmailAddress.new_canonical(a)
+    #r = EmailAddress.new_redacted(a)
+    assert_equal true, n == "user+tag@example.com"
+    assert_equal true, n >  "b@example.com"
+    assert_equal true, n.same_as?(c)
+    assert_equal true, n.same_as?(a)
   end
 
-  def test_idn
-    a = EmailAddress.new("User+tag@ɹᴉɐℲuǝll∀.ws")
-    assert_equal "user@xn--ull-6eb78cvh231oq7gdzb.ws", a.canonical
-    assert_equal "9c06226d81149f59b4df32bb426c64a0cbafcea5@xn--ull-6eb78cvh231oq7gdzb.ws", a.redact
+  def test_matches
+    a = EmailAddress.new("User+tag@gmail.com")
+    assert_equal false,  a.matches?('mail.com')
+    assert_equal 'google',  a.matches?('google')
+    assert_equal 'user+tag@',  a.matches?('user+tag@')
+    assert_equal 'user*@gmail*',  a.matches?('user*@gmail*')
+  end
+
+  # VALIDATION
+  def test_valid
+    assert EmailAddress.valid?("User+tag@example.com", dns_lookup: :a), "valid 1"
+    assert ! EmailAddress.valid?("User%tag@example.com", dns_lookup: :a), "valid 2"
+    assert EmailAddress.new("ɹᴉɐℲuǝll∀@ɹᴉɐℲuǝll∀.ws", local_encoding: :uncode, dns_lookup: :off ), "valid unicode"
   end
 
   def test_no_domain
     e = EmailAddress.new("User+tag.gmail.ws")
-    assert_equal false, e.valid?
+    assert_equal '', e.hostname
+    assert_equal false, e.valid? # localhost not allowed by default
   end
 
-  def test_equality
-    a = EmailAddress.new("User+tag@Example.com")
-    b = EmailAddress.new("user@Example.com")
-    c = EmailAddress.new( EmailAddress.new("USER@Example.com").redact)
-    assert a != b
-    assert a < b
-    assert b > a
-    assert a.same_as?(b)
-    assert a.same_as?(c)
+  def test_regexen
+    assert "First.Last+TAG@example.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
+    assert "First.Last+TAG@example.com".match(EmailAddress::Address::STANDARD_REGEX)
+    assert_equal nil, "First.Last+TAGexample.com".match(EmailAddress::Address::STANDARD_REGEX)
+    assert_equal nil, "First#Last+TAGexample.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
   end
+
 end

@@ -20,9 +20,9 @@ module EmailAddress
       end
     end
 
-    def initialize(host, options={})
+    def initialize(host, config={})
       @host = host
-      @options = options
+      @config = config
     end
 
     def each(&block)
@@ -33,24 +33,13 @@ module EmailAddress
 
     # Returns the provider name based on the MX-er host names, or nil if not matched
     def provider
-      base = EmailAddress::Config.providers[:default]
-      EmailAddress::Config.providers.each do |name, defn|
-        defn = base.merge(defn)
-        self.each do |m|
-         return name if DomainMatcher.matches?(m[:host], defn[:exchangers])
+      return @provider if @provider
+      EmailAddress::Config.providers.each do |provider, config|
+        if config[:exchanger_match] && self.matches?(config[:exchanger_match])
+          return @provider = provider
         end
       end
-      nil
-    end
-
-    def has_dns_a_record?
-      dns_a_record.size > 0 ? true : false
-    end
-
-    def dns_a_record
-      @_dns_a_record ||= Socket.gethostbyname(@host)
-    rescue SocketError # not found, but could also mean network not work
-      @_dns_a_record ||= []
+      @provider = :default
     end
 
     # Returns: [["mta7.am0.yahoodns.net", "66.94.237.139", 1], ["mta5.am0.yahoodns.net", "67.195.168.230", 1], ["mta6.am0.yahoodns.net", "98.139.54.60", 1]]
@@ -66,7 +55,7 @@ module EmailAddress
 
     # Returns Array of domain names for the MX'ers, used to determine the Provider
     def domains
-      mxers.map {|m| EmailAddress::DomainParser.new(m.first).domain_name}.sort.uniq
+      @_domains ||= mxers.map {|m| EmailAddress::Host.new(m.first).domain_name }.sort.uniq
     end
 
     # Returns an array of MX IP address (String) for the given email domain
@@ -74,26 +63,34 @@ module EmailAddress
       mxers.map {|m| m[1] }
     end
 
+    # Simple matcher, takes an array of CIDR addresses (ip/bits) and strings.
+    # Returns true if any MX IP matches the CIDR or host name ends in string.
+    # Ex: match?(%w(127.0.0.1/32 0:0:1/64 .yahoodns.net))
+    # Note: Your networking stack may return IPv6 addresses instead of IPv4
+    # when both are available. If matching on IP, be sure to include both
+    # IPv4 and IPv6 forms for matching for hosts running on IPv6 (like gmail).
+    def matches?(rules)
+      rules = Array(rules)
+      rules.each do |rule|
+        if rule.include?("/")
+          return rule if self.in_cidr?(rule)
+        else
+          self.each {|mx| return rule if mx[:host].end_with?(rule) }
+        end
+      end
+      false
+    end
+
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.
     def in_cidr?(cidr)
+      c = NetAddr::CIDR.create(cidr)
       if cidr.include?(":")
-        in_ipv6_cidr?(cidr)
+        mx_ips.find { |ip| ip.include?(":") && c.matches?(ip) } ? true : false
+      elsif cidr.include?(".")
+        mx_ips.find { |ip| !ip.include?(":") && c.matches?(ip) } ? true : false
       else
-        in_ipv4_cidr?(cidr)
+        false
       end
     end
-
-    private
-
-    def in_ipv4_cidr?(cidr)
-      cidr = NetAddr::CIDR.create(cidr)
-      mx_ips.find { |ip| !ip.include?(":") && cidr.matches?(ip) } ? true : false
-    end
-
-    def in_ipv6_cidr?(cidr)
-      cidr = NetAddr::CIDR.create(cidr)
-      mx_ips.find { |ip| ip.include?(":") && cidr.matches?(ip) } ? true : false
-    end
-
   end
 end

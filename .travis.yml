@@ -1,0 +1,10 @@
+language: ruby
+rvm:
+  - ruby-head
+  - 2.2.2
+  - jruby-9.0.4.0
+  #- rbx
+
+addons:
+  code_climate:
+    repo_token: 729b2d0e2cc94f63b7da91042da0b6d77bbe30c2024dba04881f46caf702636f

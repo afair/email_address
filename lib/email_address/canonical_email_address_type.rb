@@ -27,18 +27,18 @@
 #    user.canonical_email #=> "patsmith@gmail.com"
 ################################################################################
 
-class EmailAddress::EmailAddressType < ActiveRecord::Type::Value
+class EmailAddress::CanonicalEmailAddressType < ActiveRecord::Type::Value
 
   # From user input, setter
   def cast(value)
-    super(EmailAddress.normal(value))
+    super(EmailAddress.canonical(value))
   end
 
   # From a database value
   def deserialize(value)
     value && EmailAddress.normal(value)
   end
-  #
+
   # To a database value (string)
   def serialize(value)
     value && EmailAddress.normal(value)
