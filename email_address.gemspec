@@ -18,12 +18,13 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "minitest", "~> 5.8.3"
-  spec.add_development_dependency "bundler", "~> 1.3"
-  spec.add_development_dependency "activerecord", "~> 5.0.0.beta1"
-  spec.add_development_dependency "sqlite3" unless RUBY_PLATFORM == 'java'
-  spec.add_development_dependency "activerecord-jdbcsqlite3-adapter" if RUBY_PLATFORM == 'java'
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "minitest",     "~> 5.8.3"
+  spec.add_development_dependency "bundler",      "~> 1.3"
+  spec.add_development_dependency "activerecord", "~> 5.0.0.beta1"   if RUBY_PLATFORM != 'java'
+  spec.add_development_dependency "activerecord", "~> 4.2.5"         if RUBY_PLATFORM == 'java'
+  spec.add_development_dependency "sqlite3"                          if RUBY_PLATFORM != 'java'
+  spec.add_development_dependency "activerecord-jdbcsqlite3-adapter" if RUBY_PLATFORM == 'java'
   spec.add_development_dependency "codeclimate-test-reporter"
   spec.add_dependency "simpleidn"
   spec.add_dependency "netaddr"
