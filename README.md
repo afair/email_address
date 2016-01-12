@@ -2,6 +2,7 @@
 
 [![Gem Version](https://badge.fury.io/rb/email_address.svg)](http://rubygems.org/gems/email_address)
 [![Build Status](https://travis-ci.org/afair/email_address.svg?branch=v0.1)](https://travis-ci.org/afair/email_address)
+[![Code Climate](https://codeclimate.com/github/afair/email_address/badges/gpa.svg)](https://codeclimate.com/github/afair/email_address)
 
 The `email_address` gem provides a ruby language library for working
 with email addresses.
