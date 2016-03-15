@@ -291,7 +291,7 @@ module EmailAddress
 
     # True if the :dns_lookup setting is enabled
     def dns_enabled?
-      EmailAddress::Config.setting(:dns_lookup)
+      EmailAddress::Config.setting(:dns_lookup).equal?(:off) ? false : true
     end
 
     # True if the host name has a DNS A Record
