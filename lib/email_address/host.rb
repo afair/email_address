@@ -182,7 +182,7 @@ module EmailAddress
       provider = self.exchangers.provider
       if provider != :default
         self.set_provider(provider,
-          EmailAddress::Config.provider(self.provider))
+          EmailAddress::Config.provider(provider))
       end
 
       self.provider ||= self.set_provider(:default)
