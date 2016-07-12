@@ -17,7 +17,7 @@ module EmailAddress
     # instance, and initializes the address to the "normalized" format of the
     # address. The original string is available in the #original method.
     def initialize(email_address, config={})
-      email_address.strip! if email_address
+      email_address  = email_address.strip if email_address
       @original      = email_address
       email_address||= ""
       if lh = email_address.match(/(.+)@(.+)/)
