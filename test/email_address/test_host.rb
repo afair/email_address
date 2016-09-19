@@ -12,6 +12,15 @@ class TestHost < MiniTest::Test
     assert_equal "ex*****", a.munge
     assert_equal nil, a.subdomains
   end
+  
+  def test_dns_enabled
+    a = EmailAddress::Host.new("example.com")
+    assert_instance_of TrueClass, a.dns_enabled?
+    old_setting = EmailAddress::Config.setting(:dns_lookup)
+    EmailAddress::Config.configure(dns_lookup: :off)
+    assert_instance_of FalseClass, a.dns_enabled?
+    EmailAddress::Config.configure(dns_lookup: old_setting)
+  end
 
   def test_foreign_host
     a = EmailAddress::Host.new("my.yahoo.co.jp")
