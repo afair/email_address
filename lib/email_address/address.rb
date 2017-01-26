@@ -206,37 +206,33 @@ module EmailAddress
     # Returns true if this address is considered valid according to the format
     # configured for its provider, It test the normalized form.
     def valid?(options={})
-      self.error = nil
+      @error = nil
       unless self.local.valid?
-        self.error = "Invalid Mailbox"
-        return false
+        return set_error :invalid_mailbox
       end
       unless self.host.valid?
-        self.error = "Invalid Host"
-        return false
+        return set_error :invalid_host
       end
       if @config[:address_size] && !@config[:address_size].include?(self.to_s.size)
-        self.error = "Exceeds size"
-        return false
+        return set_error :exceeds_size
       end
       if @config[:address_validation].is_a?(Proc)
         unless @config[:address_validation].call(self.to_s)
-          self.error = "Not allowed"
-          return false
+          return set_error :not_allowed
         end
       else
         return false unless self.local.valid?
         return false unless self.host.valid?
       end
       if !@config[:address_local] && !self.hostname.include?(".")
-        self.error = "Incomplete Domain"
-        return false
+        return set_error :incomplete_domain
       end
       true
     end
 
-    def error=(err)
-      @error = err
+    def set_error(err)
+      @error = EmailAddress::Config.error_messages[err] || err
+      false
     end
 
     def error

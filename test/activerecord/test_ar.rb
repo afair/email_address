@@ -7,6 +7,7 @@ class TestAR < MiniTest::Test
   def test_validation
     user = User.new(email:"Pat.Jones+ASDF#GMAIL.com")
     assert_equal false, user.valid?
+    assert user.errors.messages[:email].first
     user = User.new(email:"Pat.Jones+ASDF@GMAIL.com")
     assert_equal true, user.valid?
   end
