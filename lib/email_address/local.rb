@@ -65,7 +65,8 @@ module EmailAddress
   #                        [CFWS]
   ############################################################################
   class Local
-    attr_accessor :mailbox, :comment, :tag, :local, :config, :original
+    attr_reader   :local
+    attr_accessor :mailbox, :comment, :tag, :config, :original
     attr_accessor :syntax
 
     # RFC-2142: MAILBOX NAMES FOR COMMON SERVICES, ROLES AND FUNCTIONS
@@ -79,19 +80,20 @@ module EmailAddress
     STANDARD_MAX_SIZE  = 64
 
     # Conventional : word([.-+'_]word)*
-    CONVENTIONAL_MAILBOX_REGEX  = /\A [\p{L}\p{N}]+ ( [\.\-\+\'_] [\p{L}\p{N}]+ )* \z/x
-    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}]+ ( [\.\-\+\'_] [\p{L}\p{N}]+ )*/x
+    CONVENTIONAL_MAILBOX_REGEX  = /\A [\p{L}\p{N}]+ (?: [\.\-\+\'_] [\p{L}\p{N}]+ )* \z/x
+    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}]+ (?: [\.\-\+\'_] [\p{L}\p{N}]+ )*/x
 
     # Relaxed: same characters, relaxed order
-    RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}]+ ( [\.\-\+\'_]+ [\p{L}\p{N}]+ )* \z/x
+    RELAXED_MAILBOX_WITHIN = /[\p{L}\p{N}]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}]+ )*/x
+    RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}]+ )* \z/x
 
     # RFC5322 Token: token."token".token (dot-separated tokens)
     #   Quoted Token can also have: SPACE \" \\ ( ) , : ; < > @ [ \ ] .
     STANDARD_LOCAL_WITHIN = /
-      ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-        | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" )
-      ( \.  ( [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-              | \" ( \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" ) )* /x
+      (?: [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
+        | \" (?: \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" )
+      (?: \.  (?: [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
+              | \" (?: \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" ) )* /x
     STANDARD_LOCAL_REGEX = /\A #{STANDARD_LOCAL_WITHIN} \z/x
 
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}

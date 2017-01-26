@@ -73,6 +73,7 @@ class TestAddress < Minitest::Test
     assert "First.Last+TAG@example.com".match(EmailAddress::Address::STANDARD_REGEX)
     assert_equal nil, "First.Last+TAGexample.com".match(EmailAddress::Address::STANDARD_REGEX)
     assert_equal nil, "First#Last+TAGexample.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
+    assert "aasdf-34-.z@example.com".match(EmailAddress::Address::RELAXED_REGEX)
   end
 
 end

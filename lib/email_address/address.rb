@@ -6,11 +6,13 @@ module EmailAddress
   # (EmailAddress::Local) and Host (Email::AddressHost) parts.
   class Address
     include Comparable
-    attr_accessor :original, :local, :host, :config, :error
+    attr_accessor :original, :local, :host, :config
 
     CONVENTIONAL_REGEX = /\A#{::EmailAddress::Local::CONVENTIONAL_MAILBOX_WITHIN}
                            @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
     STANDARD_REGEX     = /\A#{::EmailAddress::Local::STANDARD_LOCAL_WITHIN}
+                           @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
+    RELAXED_REGEX      = /\A#{::EmailAddress::Local::RELAXED_MAILBOX_WITHIN}
                            @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
 
     # Given an email address of the form "local@hostname", this sets up the
@@ -231,6 +233,10 @@ module EmailAddress
         return false
       end
       true
+    end
+
+    def error=(err)
+      @error = err
     end
 
     def error
