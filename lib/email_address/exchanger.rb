@@ -51,9 +51,9 @@ module EmailAddress
           begin
             [r.exchange.to_s, IPSocket::getaddress(r.exchange.to_s), r.preference]
           rescue SocketError # not found, but could also mean network not work or it could mean one record doesn't resolve an address
-            []
+            nil
           end
-        end
+        end.compact
       end
     end
 
