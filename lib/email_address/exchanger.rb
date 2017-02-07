@@ -47,10 +47,14 @@ module EmailAddress
     def mxers
       @mxers ||= Resolv::DNS.open do |dns|
         ress = dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
-        ress.map { |r| [r.exchange.to_s, IPSocket::getaddress(r.exchange.to_s), r.preference] }
+        ress.map do |r|
+          begin
+            [r.exchange.to_s, IPSocket::getaddress(r.exchange.to_s), r.preference]
+          rescue SocketError # not found, but could also mean network not work or it could mean one record doesn't resolve an address
+            []
+          end
+        end
       end
-    rescue SocketError # not found, but could also mean network not work
-      @_dns_a_record ||= []
     end
 
     # Returns Array of domain names for the MX'ers, used to determine the Provider
