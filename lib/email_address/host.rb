@@ -30,7 +30,8 @@ module EmailAddress
   # that provider.
   ##############################################################################
   class Host
-    attr_accessor :host_name, :dns_name, :domain_name, :registration_name,
+    attr_reader :host_name
+    attr_accessor :dns_name, :domain_name, :registration_name,
                   :tld, :tld2, :subdomains, :ip_address, :config, :provider,
                   :comment
     MAX_HOST_LENGTH = 255

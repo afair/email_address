@@ -84,6 +84,7 @@ module EmailAddress
   # The value is an array of match tokens.
   # * host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
   # * exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
+  #
 
   class Config
     @config = {
@@ -132,6 +133,15 @@ module EmailAddress
       },
     }
 
+    @errors = {
+      invalid_address:    "Invalid Email Address",
+      invalid_mailbox:    "Invalid Recipient/Mailbox",
+      invalid_host:       "Invalid Host/Domain Name",
+      exceeds_size:       "Address too long",
+      not_allowed:        "Address is not allowed",
+      incomplete_domain:  "Domain name is incomplete",
+    }
+
     # Set multiple default configuration settings
     def self.configure(config={})
       @config.merge!(config)
@@ -156,6 +166,12 @@ module EmailAddress
         @providers[name].merge!(config)
       end
       @providers[name]
+    end
+
+    # Customize your own error message text.
+    def self.error_messages(hash=nil)
+      @errors = @errors.merge(hash) if hash
+      @errors
     end
 
     def self.all_settings(*configs)

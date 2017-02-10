@@ -6,11 +6,13 @@ module EmailAddress
   # (EmailAddress::Local) and Host (Email::AddressHost) parts.
   class Address
     include Comparable
-    attr_accessor :original, :local, :host, :config, :error
+    attr_accessor :original, :local, :host, :config
 
     CONVENTIONAL_REGEX = /\A#{::EmailAddress::Local::CONVENTIONAL_MAILBOX_WITHIN}
                            @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
     STANDARD_REGEX     = /\A#{::EmailAddress::Local::STANDARD_LOCAL_WITHIN}
+                           @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
+    RELAXED_REGEX      = /\A#{::EmailAddress::Local::RELAXED_MAILBOX_WITHIN}
                            @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
 
     # Given an email address of the form "local@hostname", this sets up the
@@ -109,7 +111,9 @@ module EmailAddress
     # spaves and comments and tags, and any extraneous part of the address
     # not considered a unique account by the provider.
     def canonical
-      [self.local.canonical, @host.canonical].join('@')
+      c = self.local.canonical
+      c += "@" + self.host.canonical if self.host.canonical && self.host.canonical > " "
+      c
     end
 
     # True if the given address is already in it's canonical form.
@@ -119,9 +123,13 @@ module EmailAddress
 
     # Returns the redacted form of the address
     # This format is defined by this libaray, and may change as usage increases.
-    def redact
+    # Takes either :sha1 (default) or :md5 as the argument
+    def redact(digest=:sha1)
+      raise "Unknown Digest type: #{digest}" unless %i(sha1 md5).include?(digest)
       return self.to_s if self.local.redacted?
-      %Q({#{self.sha1}}@#{self.host.to_s})
+      r = %Q({#{send(digest)}})
+      r += "@" + self.host.to_s if self.host.to_s && self.host.to_s > " "
+      r
     end
 
     # True if the address is already in the redacted state.
@@ -147,7 +155,7 @@ module EmailAddress
     # This returns the SHA1 digest (in a hex string) of the canonical email
     # address. See #md5 for more background.
     def sha1
-      Digest::SHA1.hexdigest(canonical + @config[:sha1_secret])
+      Digest::SHA1.hexdigest((canonical||"") + (@config[:sha1_secret]||""))
     end
 
     #---------------------------------------------------------------------------
@@ -204,33 +212,33 @@ module EmailAddress
     # Returns true if this address is considered valid according to the format
     # configured for its provider, It test the normalized form.
     def valid?(options={})
-      self.error = nil
+      @error = nil
       unless self.local.valid?
-        self.error = "Invalid Mailbox"
-        return false
+        return set_error :invalid_mailbox
       end
       unless self.host.valid?
-        self.error = "Invalid Host"
-        return false
+        return set_error :invalid_host
       end
       if @config[:address_size] && !@config[:address_size].include?(self.to_s.size)
-        self.error = "Exceeds size"
-        return false
+        return set_error :exceeds_size
       end
       if @config[:address_validation].is_a?(Proc)
         unless @config[:address_validation].call(self.to_s)
-          self.error = "Not allowed"
-          return false
+          return set_error :not_allowed
         end
       else
         return false unless self.local.valid?
         return false unless self.host.valid?
       end
       if !@config[:address_local] && !self.hostname.include?(".")
-        self.error = "Incomplete Domain"
-        return false
+        return set_error :incomplete_domain
       end
       true
+    end
+
+    def set_error(err)
+      @error = EmailAddress::Config.error_messages[err] || err
+      false
     end
 
     def error

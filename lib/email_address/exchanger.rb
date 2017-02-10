@@ -33,7 +33,7 @@ module EmailAddress
 
     # Returns the provider name based on the MX-er host names, or nil if not matched
     def provider
-      return @provider if @provider
+      return @provider if defined? @provider
       EmailAddress::Config.providers.each do |provider, config|
         if config[:exchanger_match] && self.matches?(config[:exchanger_match])
           return @provider = provider

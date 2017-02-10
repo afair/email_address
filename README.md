@@ -365,6 +365,21 @@ configuration options:
     EmailAddress::Config.provider(:github,
            host_match: %w(github.com), local_format: :standard)
 
+#### Override Error Messaegs
+
+You can override the default error messages as follows:
+
+    EmailAddress::Config.error_messages(
+      invalid_address:    "Invalid Email Address",
+      invalid_mailbox:    "Invalid Recipient/Mailbox",
+      invalid_host:       "Invalid Host/Domain Name",
+      exceeds_size:       "Address too long",
+      not_allowed:        "Address is not allowed",
+      incomplete_domain:  "Domain name is incomplete")
+
+Full translation support would be ideal though.
+
+
 ### Available Configuration Settings
 
 * dns_lookup: Enables DNS lookup for validation by
