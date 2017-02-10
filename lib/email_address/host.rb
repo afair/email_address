@@ -169,6 +169,14 @@ module EmailAddress
       end
     end
 
+    # True if host is hosted at the provider, not a public provider host name
+    def hosted_service?
+      return false unless registration_name
+      find_provider
+      return false unless config[:host_match]
+      ! matches?(config[:host_match])
+    end
+
     def find_provider # :nodoc:
       return self.provider if self.provider
 

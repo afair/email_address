@@ -29,7 +29,7 @@ module EmailAddress
       end
       @host         = EmailAddress::Host.new(host, config)
       @config       = @host.config
-      @local        = EmailAddress::Local.new(local, @config)
+      @local        = EmailAddress::Local.new(local, @config, @host)
     end
 
     ############################################################################

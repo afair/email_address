@@ -10,9 +10,9 @@ class TestHost < MiniTest::Test
     assert_equal "example", a.registration_name
     assert_equal "com", a.tld
     assert_equal "ex*****", a.munge
-    assert_equal nil, a.subdomains
+    assert_nil   a.subdomains
   end
-  
+
   def test_dns_enabled
     a = EmailAddress::Host.new("example.com")
     assert_instance_of TrueClass, a.dns_enabled?
@@ -94,6 +94,11 @@ class TestHost < MiniTest::Test
     assert "xn--5ca.com".match EmailAddress::Host::CANONICAL_HOST_REGEX
     assert "[127.0.0.1]".match EmailAddress::Host::STANDARD_HOST_REGEX
     assert "[IPv6:2001:dead::1]".match EmailAddress::Host::STANDARD_HOST_REGEX
-    assert_equal nil, "[256.0.0.1]".match(EmailAddress::Host::STANDARD_HOST_REGEX)
+    assert_nil "[256.0.0.1]".match(EmailAddress::Host::STANDARD_HOST_REGEX)
+  end
+
+  def test_hosted_service
+    assert EmailAddress.valid?('test@jiff.com', dns_lookup: :mx)
+    assert ! EmailAddress.valid?('test@gmail.com', dns_lookup: :mx)
   end
 end

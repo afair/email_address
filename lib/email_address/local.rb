@@ -98,9 +98,10 @@ module EmailAddress
 
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
 
-    def initialize(local, config={})
+    def initialize(local, config={}, host=nil)
       self.config   = config.empty? ? EmailAddress::Config.all_settings : config
       self.local    = local
+      @host         = host
     end
 
     def local=(raw)
@@ -299,7 +300,13 @@ module EmailAddress
     end
 
     def valid_size?
-      return false if @config[:local_size] && !@config[:local_size].include?(self.local.size)
+      if @host && @host.hosted_service?
+        return false if @config[:local_private_size] &&
+                      !@config[:local_private_size].include?(self.local.size)
+      else
+        return false if @config[:local_size] &&
+                       !@config[:local_size].include?(self.local.size)
+      end
       return false if @config[:mailbox_size] && !@config[:mailbox_size].include?(self.mailbox.size)
       return false if self.local.size > STANDARD_MAX_SIZE
       true

@@ -87,6 +87,7 @@ class TestAddress < Minitest::Test
 
   # Quick Regression tests for addresses that should have been valid (but fixed)
   def test_issues
+    assert true, EmailAddress.valid?('test@jiff.com', dns_lookup: :mx) # #7
     assert true, EmailAddress.valid?("w.-asdf-_@hotmail.com") # #8
     assert true, EmailAddress.valid?("first_last@hotmail.com") # #8
   end

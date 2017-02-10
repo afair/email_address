@@ -119,8 +119,9 @@ module EmailAddress
       },
       google: {
         host_match:       %w(gmail.com googlemail.com),
-        exchanger_match:  %w(google.com),
+        exchanger_match:  %w(google.com googlemail.com),
         local_size:       5..64,
+        local_private_size: 1..64, # When hostname not in host_match (private label)
         mailbox_canonical: ->(m) {m.gsub('.','')},
       },
       msn: {
