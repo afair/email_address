@@ -85,4 +85,10 @@ class TestAddress < Minitest::Test
     assert "aasdf-34-.z@example.com".match(EmailAddress::Address::RELAXED_REGEX)
   end
 
+  # Quick Regression tests for addresses that should have been valid (but fixed)
+  def test_issues
+    assert true, EmailAddress.valid?("w.-asdf-_@hotmail.com") # #8
+    assert true, EmailAddress.valid?("first_last@hotmail.com") # #8
+  end
+
 end
