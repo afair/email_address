@@ -111,7 +111,9 @@ module EmailAddress
     # spaves and comments and tags, and any extraneous part of the address
     # not considered a unique account by the provider.
     def canonical
-      [self.local.canonical, @host.canonical].join('@')
+      c = self.local.canonical
+      c += "@" + self.host.canonical if self.host.canonical && self.host.canonical > " "
+      c
     end
 
     # True if the given address is already in it's canonical form.
@@ -121,9 +123,13 @@ module EmailAddress
 
     # Returns the redacted form of the address
     # This format is defined by this libaray, and may change as usage increases.
-    def redact
+    # Takes either :sha1 (default) or :md5 as the argument
+    def redact(digest=:sha1)
+      raise "Unknown Digest type: #{digest}" unless %i(sha1 md5).include?(digest)
       return self.to_s if self.local.redacted?
-      %Q({#{self.sha1}}@#{self.host.to_s})
+      r = %Q({#{send(digest)}})
+      r += "@" + self.host.to_s if self.host.to_s && self.host.to_s > " "
+      r
     end
 
     # True if the address is already in the redacted state.
@@ -149,7 +155,7 @@ module EmailAddress
     # This returns the SHA1 digest (in a hex string) of the canonical email
     # address. See #md5 for more background.
     def sha1
-      Digest::SHA1.hexdigest(canonical + @config[:sha1_secret])
+      Digest::SHA1.hexdigest((canonical||"") + (@config[:sha1_secret]||""))
     end
 
     #---------------------------------------------------------------------------
