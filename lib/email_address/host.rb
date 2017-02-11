@@ -144,7 +144,11 @@ module EmailAddress
 
     def host_name=(name)
       @host_name = name = name.strip.downcase.gsub(' ', '').gsub(/\(.*\)/, '')
-      @dns_name  = ::SimpleIDN.to_ascii(self.host_name)
+      if host_name =~ /[^[:ascii:]]/
+        @dns_name  = ::SimpleIDN.to_ascii(self.host_name)
+      else
+        @dns_name  = self.host_name
+      end
 
       # Subdomain only (root@localhost)
       if name.index('.').nil?
@@ -166,6 +170,9 @@ module EmailAddress
         end
         self.domain_name = self.registration_name + '.' + self.tld2
         self.find_provider
+      else # Bad format
+        self.subdomains = self.tld = self.tld2 = ""
+        self.domain_name = self.registration_name = name
       end
     end
 

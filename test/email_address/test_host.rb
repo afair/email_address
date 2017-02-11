@@ -101,4 +101,8 @@ class TestHost < MiniTest::Test
     assert EmailAddress.valid?('test@jiff.com', dns_lookup: :mx)
     assert ! EmailAddress.valid?('test@gmail.com', dns_lookup: :mx)
   end
+
+  def test_bad_formats
+    #assert EmailAddress::Host.new('example.com:w').registration_name
+  end
 end
