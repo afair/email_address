@@ -122,10 +122,10 @@ module EmailAddress
       if raw =~ /\A\"(.*)\"\z/ # Quoted
         raw = $1
         raw.gsub!(/\\(.)/, '\1') # Unescape
-      elsif @config[:local_fix]
+      elsif @config[:local_fix] && @config[:local_format] != :standard
         raw.gsub!(' ','')
         raw.gsub!(',','.')
-        raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
+        #raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
       end
       raw, comment = self.parse_comment(raw)
       mailbox, tag = self.parse_tag(raw)
@@ -314,7 +314,7 @@ module EmailAddress
 
     def valid_encoding?(enc=@config[:local_encoding]||:ascii)
       return false if enc == :ascii && self.unicode?
-      return false if enc == :unicode && self.ascii?
+      #return false if enc == :unicode && self.ascii?
       true
     end
 

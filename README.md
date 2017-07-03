@@ -26,6 +26,41 @@ want to continue using with your current version.
 
 Requires Ruby 2.0 or later.
 
+## Quick Start
+
+To quickly validate email addresses, use the valid? and error helpers.
+`valid?` returns a boolean, and `error` returns nil if valid, otherwise
+a basic error message.
+
+    EmailAddress.valid? "allen@google.com" #=> true
+    EmailAddress.error "allen@bad-d0main.com" #=> "Invalid Host/Domain Name"
+
+`EmailAddress` deeply validates your email addresses. It checks:
+
+* Host name format and DNS setup
+* Mailbox format according to "conventional" form. This matches most used user
+  email accounts, but is a subset of the RFC specification.
+
+It does not check:
+
+* The mail server is configured to accept connections
+* The mailbox is valid and accepts email.
+
+By default, MX records are required in DNS. MX or "mail exchanger" records
+tell where to deliver email for the domain. Many domains run their
+website on one provider (ISP, Heroku, etc.), and email on a different
+provider (such as Google Apps).  Note that `example.com`, while
+a valid domain name, does not have MX records.
+
+    EmailAddress.valid? "allen@example.com" #=> false
+    EmailAddress.valid? "allen@example.com", dns_lookup: :off #=> true
+
+Most mail servers do not yet support Unicode mailboxes, so the default here is ASCII.
+
+    EmailAddress.error "Pelé@google.com" #=> "Invalid Recipient/Mailbox"
+    EmailAddress.valid? "Pelé@google.com", local_encoding: :unicode #=> true
+
+
 ## Background
 
 The email address specification is complex and often not what you want

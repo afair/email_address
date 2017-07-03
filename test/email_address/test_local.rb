@@ -48,6 +48,7 @@ class TestLocal < MiniTest::Test
   def test_unicode
     assert ! EmailAddress::Local.new("üñîçøðé1", local_encoding: :ascii).standard?, "not üñîçøðé1"
     assert EmailAddress::Local.new("üñîçøðé2", local_encoding: :unicode).standard?, "üñîçøðé2"
+    assert EmailAddress::Local.new("test", local_encoding: :unicode).valid?, "unicode should include ascii"
     assert ! EmailAddress::Local.new("üñîçøðé3").valid?, "üñîçøðé3 valid"
   end
 
