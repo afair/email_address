@@ -21,11 +21,15 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "minitest",     "~> 5.8.3"
   spec.add_development_dependency "bundler",      "~> 1.3"
-  spec.add_development_dependency "activerecord", "~> 5.1.3"         if RUBY_PLATFORM != 'java'
-  spec.add_development_dependency "activerecord", "~> 4.2.5"         if RUBY_PLATFORM == 'java'
-  spec.add_development_dependency "sqlite3"                          if RUBY_PLATFORM != 'java'
-  spec.add_development_dependency "activerecord-jdbcsqlite3-adapter" if RUBY_PLATFORM == 'java'
+  if RUBY_PLATFORM == 'java'
+    spec.add_development_dependency "activerecord", "=  4.2.5"
+    spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", '=1.3.19'
+  else
+    spec.add_development_dependency "activerecord", "~> 5.1.3"
+    spec.add_development_dependency "sqlite3"
+  end
   spec.add_development_dependency "codeclimate-test-reporter"
+
   spec.add_dependency "simpleidn"
   spec.add_dependency "netaddr"
 end
