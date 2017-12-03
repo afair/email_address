@@ -92,4 +92,10 @@ class TestAddress < Minitest::Test
     assert true, EmailAddress.valid?("first_last@hotmail.com") # #8
   end
 
+  def test_issue9
+    assert ! EmailAddress.valid?('example.user@foo.')
+    assert ! EmailAddress.valid?('ogog@sss.c')
+    assert ! EmailAddress.valid?('example.user@foo.com/')
+  end
+
 end

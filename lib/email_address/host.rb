@@ -363,9 +363,7 @@ module EmailAddress
 
     # Returns true if the host name is valid according to the current configuration
     def valid?(rule=@config[:dns_lookup]||:mx)
-      if self.provider != :default # well known
-        true
-      elsif self.ip_address
+      if self.ip_address
         @config[:host_allow_ip] && self.valid_ip?
       elsif rule == :mx
         self.exchangers.mx_ips.size > 0
@@ -385,9 +383,9 @@ module EmailAddress
       if self.ip_address.nil?
         false
       elsif self.ip_address.include?(":")
-        self.ip_address =~ Resolv::IPv6::Regex
+        self.ip_address =~ Resolv::IPv6::Regex ? true : false
       elsif self.ip_address.include?(".")
-        self.ip_address =~ Resolv::IPv4::Regex
+        self.ip_address =~ Resolv::IPv4::Regex ? true : false
       end
     end
 
