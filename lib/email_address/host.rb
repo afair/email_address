@@ -366,13 +366,7 @@ module EmailAddress
       if self.ip_address
         @config[:host_allow_ip] && self.valid_ip?
       elsif rule == :mx
-        if self.exchangers.mx_ips.size == 0
-          false
-        elsif self.exchangers.mx_ips[0] == "0.0.0.0" || self.exchangers.mx_ips[0] == "::0"
-          false
-        else
-          true
-        end
+        self.exchangers.mx_ips.size > 0
       elsif rule == :a
         self.has_dns_a_record?
       elsif rule == :off

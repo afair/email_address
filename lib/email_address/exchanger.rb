@@ -49,7 +49,11 @@ module EmailAddress
         ress = dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
         records = ress.map do |r|
           begin
-            [r.exchange.to_s, IPSocket::getaddress(r.exchange.to_s), r.preference]
+            if r.exchange.to_s > " "
+              [r.exchange.to_s, IPSocket::getaddress(r.exchange.to_s), r.preference]
+            else
+              nil
+            end
           rescue SocketError # not found, but could also mean network not work or it could mean one record doesn't resolve an address
             nil
           end
