@@ -104,6 +104,7 @@ class TestHost < MiniTest::Test
 
   def test_yahoo_bad_tld
     assert ! EmailAddress.valid?('test@yahoo.badtld')
+    assert ! EmailAddress.valid?('test@yahoo.wtf') # Registered, but MX IP = 0.0.0.0
   end
 
   def test_bad_formats
