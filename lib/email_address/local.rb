@@ -91,9 +91,10 @@ module EmailAddress
     #   Quoted Token can also have: SPACE \" \\ ( ) , : ; < > @ [ \ ] .
     STANDARD_LOCAL_WITHIN = /
       (?: [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-        | \" (?: \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" )
+        | \" (?: \\[\" \\] | [\x20-\x21\x23-\x2F\x3A-\x40\x5B\x5D-\x60\x7B-\x7E\p{L}\p{N}] )+ \" )
       (?: \.  (?: [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-              | \" (?: \\[\" \\] | [\x20 \! \x23-\x5B \x5D-\x7E \p{L} \p{N}] )+ \" ) )* /x
+              | \" (?: \\[\" \\] | [\x20-\x21\x23-\x2F\x3A-\x40\x5B\x5D-\x60\x7B-\x7E\p{L}\p{N}] )+ \" ) )* /x
+
     STANDARD_LOCAL_REGEX = /\A #{STANDARD_LOCAL_WITHIN} \z/x
 
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
