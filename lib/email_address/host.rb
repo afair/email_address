@@ -143,7 +143,10 @@ module EmailAddress
     end
 
     def host_name=(name)
-      @host_name = name = name.strip.downcase.gsub(' ', '').gsub(/\(.*\)/, '')
+      @host_name = name = name.strip.downcase
+      if @config[:host_remove_spaces]
+        @host_name = @host_name.gsub(' ', '')
+      end
       if host_name =~ /[^[:ascii:]]/
         @dns_name  = ::SimpleIDN.to_ascii(self.host_name)
       else

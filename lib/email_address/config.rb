@@ -107,6 +107,7 @@ module EmailAddress
       host_validation:    :mx || :a || :connect,
       host_size:          1..253,
       host_allow_ip:      false,
+      host_remove_spaces: false,
 
       address_validation: :parts, # :parts, :smtp, Proc
       address_size:       3..254,

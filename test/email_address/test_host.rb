@@ -108,6 +108,7 @@ class TestHost < MiniTest::Test
   end
 
   def test_bad_formats
-    #assert EmailAddress::Host.new('example.com:w').registration_name
+    assert ! EmailAddress::Host.new('ya  hoo.com').valid?
+    assert EmailAddress::Host.new('ya  hoo.com', host_remove_spaces:true).valid?
   end
 end
