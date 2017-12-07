@@ -111,4 +111,14 @@ class TestHost < MiniTest::Test
     assert ! EmailAddress::Host.new('ya  hoo.com').valid?
     assert EmailAddress::Host.new('ya  hoo.com', host_remove_spaces:true).valid?
   end
+
+  def test_errors
+    assert_equal EmailAddress::Host.new("yahoo.com").error, nil
+    assert_equal EmailAddress::Host.new("example.com").error, :domain_does_not_accept_email
+    assert_equal EmailAddress::Host.new("yahoo.wtf").error, :domain_unknown
+    assert_equal EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", dns_lookup: :off).error, nil
+    assert_equal EmailAddress::Host.new("[127.0.0.1]").error, :ip_address_forbidden
+    assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip:true).error, :ipv4_address_invalid
+    assert_equal EmailAddress::Host.new("[IPv6::12t]", host_allow_ip:true).error, :ipv6_address_invalid
+  end
 end
