@@ -33,7 +33,7 @@ module EmailAddress
     attr_reader :host_name
     attr_accessor :dns_name, :domain_name, :registration_name,
                   :tld, :tld2, :subdomains, :ip_address, :config, :provider,
-                  :comment
+                  :comment, :error_message
     MAX_HOST_LENGTH = 255
 
     # Sometimes, you just need a Regexp...
@@ -313,11 +313,6 @@ module EmailAddress
       EmailAddress::Config.setting(:dns_lookup).equal?(:off) ? false : true
     end
 
-    # True if the host name has a DNS A Record
-    def has_dns_a_record?
-      dns_a_record.size > 0 ? true : false
-    end
-
     # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
     def dns_a_record
       @_dns_a_record ||= Socket.gethostbyname(self.dns_name)
@@ -366,16 +361,49 @@ module EmailAddress
 
     # Returns true if the host name is valid according to the current configuration
     def valid?(rule=@config[:dns_lookup]||:mx)
+      self.error_message = nil
       if self.ip_address
-        @config[:host_allow_ip] && self.valid_ip?
-      elsif rule == :mx
-        self.exchangers.mx_ips.size > 0
-      elsif rule == :a
-        self.has_dns_a_record?
-      elsif rule == :off
-        self.to_s.size <= MAX_HOST_LENGTH
-      else
+        valid_ip?
+      elsif ! valid_format?
         false
+      elsif rule == :mx
+        valid_mx?
+      elsif rule == :a
+        valid_dns?
+      elsif rule == :off
+        true
+      else
+        set_error(:domain_bad_validation_rule)
+      end
+    end
+
+    # The inverse of valid? -- Returns nil (falsey) if valid, otherwise error message
+    def error
+      valid? ? nil : @error_message
+    end
+
+    # True if the host name has a DNS A Record
+    def valid_dns?
+      dns_a_record.size > 0 || set_error(:domain_unknown)
+    end
+
+    # True if the host name has valid MX servers configured in DNS
+    def valid_mx?
+      if self.exchangers.mx_ips.size > 0
+        true
+      elsif valid_dns?
+        set_error(:domain_does_not_accept_email)
+      else
+        set_error(:domain_unknown)
+      end
+    end
+
+    # True if the host_name passes Regular Expression match and size limits.
+    def valid_format?
+      if self.host_name =~ CANONICAL_HOST_REGEX && self.to_s.size <= MAX_HOST_LENGTH
+        true
+      else
+        set_error(:domain_invalid)
       end
     end
 
@@ -383,13 +411,18 @@ module EmailAddress
     # is a potentially valid IP address. It does not check if the address
     # is reachable.
     def valid_ip?
-      if self.ip_address.nil?
-        false
+      if ! @config[:host_allow_ip]
+        set_error(:ip_address_forbidden)
       elsif self.ip_address.include?(":")
-        self.ip_address =~ Resolv::IPv6::Regex ? true : false
+        self.ip_address =~ Resolv::IPv6::Regex ? true : set_error(:ipv6_address_invalid)
       elsif self.ip_address.include?(".")
-        self.ip_address =~ Resolv::IPv4::Regex ? true : false
+        self.ip_address =~ Resolv::IPv4::Regex ? true : set_error(:ipv4_address_invalid)
       end
+    end
+
+    def set_error(err)
+      @error_message = EmailAddress::Config.error_messages.fetch(err) { err }
+      false
     end
 
   end

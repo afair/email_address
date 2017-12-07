@@ -217,7 +217,7 @@ module EmailAddress
         return set_error :invalid_mailbox
       end
       unless self.host.valid?
-        return set_error :invalid_host
+        return set_error self.host.error_message
       end
       if @config[:address_size] && !@config[:address_size].include?(self.to_s.size)
         return set_error :exceeds_size
@@ -237,7 +237,7 @@ module EmailAddress
     end
 
     def set_error(err)
-      @error = EmailAddress::Config.error_messages[err] || err
+      @error = EmailAddress::Config.error_messages.fetch(err) { err }
       false
     end
 
