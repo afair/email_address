@@ -93,7 +93,7 @@ module EmailAddress
       munge_string:       "*****",
 
       local_downcase:     true,
-      local_fix:          true,
+      local_fix:          false,
       local_encoding:     :ascii, # :ascii, :unicode,
       local_parse:        nil,   # nil, Proc
       local_format:       :conventional, # :conventional, :relaxed, :redacted, :standard, Proc
