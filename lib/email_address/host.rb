@@ -143,7 +143,7 @@ module EmailAddress
     end
 
     def host_name=(name)
-      @host_name = name = name.strip.downcase
+      @host_name = name = name.downcase
       if @config[:host_remove_spaces]
         @host_name = @host_name.gsub(' ', '')
       end
