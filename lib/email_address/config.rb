@@ -68,6 +68,9 @@ module EmailAddress
   # * host_allow_ip:      false,
   #   Allow IP address format in host: [127.0.0.1], [IPv6:::1]
   #
+  # * host_local:         false,
+  #   Allow localhost, no domain, or local subdomains.
+  #
   # * address_validation: :parts, :smtp, ->(address) { true }
   #   Address validation policy
   #   :parts              Validate local and host.
@@ -77,8 +80,11 @@ module EmailAddress
   # * address_size:       3..254,
   #   A range specifying the size limit of the complete address
   #
-  # * address_local:      false,
-  #   Allow localhost, no domain, or local subdomains.
+  # * address_fqdn_domain: nil || "domain.tld"
+  #   Configure to complete the FQDN (Fully Qualified Domain Name)
+  #   When host is blank, this value is used
+  #   When host is computer name only, a dot and this is appended to get the FQDN
+  #   You probably don't want this unless you have host-local email accounts
   #
   # For provider rules to match to domain names and Exchanger hosts
   # The value is an array of match tokens.
@@ -104,14 +110,15 @@ module EmailAddress
       mailbox_validator:  nil, # nil,  Proc
 
       host_encoding:      :punycode || :unicode,
-      host_validation:    :mx || :a || :connect,
+      host_validation:    :mx || :a || :connect || :syntax,
       host_size:          1..253,
       host_allow_ip:      false,
       host_remove_spaces: false,
+      host_local:         false,
 
       address_validation: :parts, # :parts, :smtp, Proc
       address_size:       3..254,
-      address_localhost:  false,
+      address_fqdn_domain: nil, # Fully Qualified Domain Name = [host].[domain.tld]
     }
 
     @providers = {

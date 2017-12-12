@@ -20,10 +20,6 @@ and can deal with gmail's "optional dots" in addresses.
 It provides Active Record (Rails) extensions, including an
 address validator and attributes API custom datatypes.
 
-*Note:* Version 0.1.0 contains significant API and internal changes over the 0.0.3
-version. If you have been using the 0.0.x series of the gem, you may
-want to continue using with your current version.
-
 Requires Ruby 2.0 or later.
 
 ## Quick Start
@@ -53,7 +49,7 @@ provider (such as Google Apps).  Note that `example.com`, while
 a valid domain name, does not have MX records.
 
     EmailAddress.valid? "allen@example.com" #=> false
-    EmailAddress.valid? "allen@example.com", dns_lookup: :off #=> true
+    EmailAddress.valid? "allen@example.com", host_validation: :syntax #=> true
 
 Most mail servers do not yet support Unicode mailboxes, so the default here is ASCII.
 
@@ -359,23 +355,23 @@ control how the library treats that address. These can also be
 configured during initialization by provider and default (see below).
 
     EmailAddress.new("clark.kent@gmail.com",
-                     dns_lookup::off, host_encoding: :unicode)
+                     host_validation: :syntax, host_encoding: :unicode)
 
 Globally, you can change and query configuration options:
 
-    EmailAddress::Config.setting(:dns_lookup, :mx)
-    EmailAddress::Config.setting(:dns_lookup) #=> :mx
+    EmailAddress::Config.setting(:host_validation, :mx)
+    EmailAddress::Config.setting(:host_validation) #=> :mx
 
 Or set multiple settings at once:
 
-    EmailAddress::Config.configure(local_downcase:false, dns_lookup: :off)
+    EmailAddress::Config.configure(local_downcase:false, host_validation: :syntax)
 
 You can add special rules by domain or provider. It takes the options
 above and adds the :domain_match and :exchanger_match rules.
 
     EmailAddress.define_provider('google',
       domain_match:      %w(gmail.com googlemail.com),
-      exchanger_match:   %w(google.com), # Requires dns_lookup==:mx
+      exchanger_match:   %w(google.com), # Requires host_validation==:mx
       local_size:        5..64,
       mailbox_canonical: ->(m) {m.gsub('.','')})
 
@@ -416,11 +412,6 @@ Full translation support would be ideal though.
 
 
 ### Available Configuration Settings
-
-* dns_lookup: Enables DNS lookup for validation by
-    * :mx       - DNS MX Record lookup
-    * :a        - DNS A Record lookup (as some domains don't specify an MX incorrectly)
-    * :off      - Do not perform DNS lookup (Test mode, network unavailable)
 
 * sha1_secret -
   This application-level secret is appended to the email_address to compute
@@ -478,7 +469,7 @@ For the mailbox (AKA account, role), without the tag
   :mx                 Ensure host is configured with DNS MX records
   :a                  Ensure host is known to DNS (A Record)
   :syntax             Validate by syntax only, no Network verification
-  :connect            Attempt host connection (not implemented, BAD!)
+  :connect            Attempt host connection (Dangerous: Do not use)
 
 * host_size:          1..253,
   A range specifying the size limit of the host part,

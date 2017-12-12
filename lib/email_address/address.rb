@@ -6,7 +6,7 @@ module EmailAddress
   # (EmailAddress::Local) and Host (Email::AddressHost) parts.
   class Address
     include Comparable
-    attr_accessor :original, :local, :host, :config
+    attr_accessor :original, :local, :host, :config, :reason
 
     CONVENTIONAL_REGEX = /\A#{::EmailAddress::Local::CONVENTIONAL_MAILBOX_WITHIN}
                            @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
@@ -230,15 +230,46 @@ module EmailAddress
         return false unless self.local.valid?
         return false unless self.host.valid?
       end
-      if !@config[:address_local] && !self.hostname.include?(".")
-        return set_error :incomplete_domain
+      if @config[:address_validation] == :smtp
+
       end
       true
     end
 
-    def set_error(err)
+    # Connects to host to test if user can receive email. This should NOT be performed
+    # as an email address check, but is provided to assist in problem resolution.
+    # If you abuse this, you *could* be blocked by the ESP.
+    def connect
+      begin
+        smtp = Net::SMTP.new(self.host_name || self.ip_address)
+        smtp.start(@config[:smtp_helo_name] || 'localhost')
+        smtp.mailfrom @config[:smtp_mail_from] || 'postmaster@localhost'
+        smtp.rcptto self.to_s
+        p [:connect]
+        smtp.finish
+        true
+      rescue Net::SMTPUnknownError => e
+        set_error(:address_unknown, e.to_s)
+      rescue Net::SMTPFatalError => e
+        set_error(:address_unknown, e.to_s)
+      rescue SocketError => e
+        set_error(:address_unknown, e.to_s)
+      ensure
+        if smtp && smtp.started?
+          smtp.finish
+        end
+        !!@error
+      end
+    end
+
+    def set_error(err, reason=nil)
       @error = EmailAddress::Config.error_messages.fetch(err) { err }
+      @reason= reason
       false
+    end
+
+    def error_message
+      @error
     end
 
     def error

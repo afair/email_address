@@ -66,15 +66,19 @@ class TestAddress < Minitest::Test
 
   # VALIDATION
   def test_valid
-    assert EmailAddress.valid?("User+tag@example.com", dns_lookup: :a), "valid 1"
-    assert ! EmailAddress.valid?("User%tag@example.com", dns_lookup: :a), "valid 2"
-    assert EmailAddress.new("ɹᴉɐℲuǝll∀@ɹᴉɐℲuǝll∀.ws", local_encoding: :uncode, dns_lookup: :off ), "valid unicode"
+    assert EmailAddress.valid?("User+tag@example.com", host_validation: :a), "valid 1"
+    assert ! EmailAddress.valid?("User%tag@example.com", host_validation: :a), "valid 2"
+    assert EmailAddress.new("ɹᴉɐℲuǝll∀@ɹᴉɐℲuǝll∀.ws", local_encoding: :uncode, host_validation: :syntax ), "valid unicode"
   end
 
-  def test_no_domain
-    e = EmailAddress.new("User+tag.gmail.ws")
+  def test_localhost
+    e = EmailAddress.new("User+tag.gmail.ws") # No domain means localhost
     assert_equal '', e.hostname
     assert_equal false, e.valid? # localhost not allowed by default
+    assert_equal EmailAddress.error("user1"), :domain_invalid
+    assert_equal EmailAddress.error("user1", host_local:true),nil # :domain_does_not_accept_email
+    assert_equal EmailAddress.error("user1@localhost", host_local:true), nil #:domain_does_not_accept_email
+    assert_equal EmailAddress.error("user2@localhost", host_local:true, dns_lookup: :off, host_validation: :syntax), nil
   end
 
   def test_regexen

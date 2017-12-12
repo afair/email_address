@@ -16,10 +16,10 @@ class TestHost < MiniTest::Test
   def test_dns_enabled
     a = EmailAddress::Host.new("example.com")
     assert_instance_of TrueClass, a.dns_enabled?
-    old_setting = EmailAddress::Config.setting(:dns_lookup)
-    EmailAddress::Config.configure(dns_lookup: :off)
+    old_setting = EmailAddress::Config.setting(:host_validation)
+    EmailAddress::Config.configure(host_validation: :off)
     assert_instance_of FalseClass, a.dns_enabled?
-    EmailAddress::Config.configure(dns_lookup: old_setting)
+    EmailAddress::Config.configure(host_validation: old_setting)
   end
 
   def test_foreign_host
@@ -59,13 +59,13 @@ class TestHost < MiniTest::Test
   end
 
   def test_ipv4
-    h = EmailAddress::Host.new("[127.0.0.1]", host_allow_ip:true)
+    h = EmailAddress::Host.new("[127.0.0.1]", host_allow_ip:true, host_local:true)
     assert_equal "127.0.0.1", h.ip_address
     assert_equal true, h.valid?
   end
 
   def test_ipv6
-    h = EmailAddress::Host.new("[IPv6:::1]", host_allow_ip:true)
+    h = EmailAddress::Host.new("[IPv6:::1]", host_allow_ip:true, host_local:true)
     assert_equal "::1", h.ip_address
     assert_equal true, h.valid?
   end
@@ -116,8 +116,8 @@ class TestHost < MiniTest::Test
     assert_equal EmailAddress::Host.new("yahoo.com").error, nil
     assert_equal EmailAddress::Host.new("example.com").error, :domain_does_not_accept_email
     assert_equal EmailAddress::Host.new("yahoo.wtf").error, :domain_unknown
-    assert_equal EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", dns_lookup: :off).error, nil
-    assert_equal EmailAddress::Host.new("ya  hoo.com", dns_lookup: :off).error, :domain_invalid
+    assert_equal EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", host_validation: :syntax).error, nil
+    assert_equal EmailAddress::Host.new("ya  hoo.com", host_validation: :syntax).error, :domain_invalid
     assert_equal EmailAddress::Host.new("[127.0.0.1]").error, :ip_address_forbidden
     assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip:true).error, :ipv4_address_invalid
     assert_equal EmailAddress::Host.new("[IPv6::12t]", host_allow_ip:true).error, :ipv6_address_invalid

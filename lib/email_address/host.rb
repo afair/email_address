@@ -1,6 +1,7 @@
 require 'simpleidn'
 require 'resolv'
 require 'netaddr'
+require 'net/smtp'
 
 module EmailAddress
   ##############################################################################
@@ -33,7 +34,7 @@ module EmailAddress
     attr_reader :host_name
     attr_accessor :dns_name, :domain_name, :registration_name,
                   :tld, :tld2, :subdomains, :ip_address, :config, :provider,
-                  :comment, :error_message
+                  :comment, :error_message, :reason
     MAX_HOST_LENGTH = 255
 
     # Sometimes, you just need a Regexp...
@@ -143,7 +144,8 @@ module EmailAddress
     end
 
     def host_name=(name)
-      @host_name = name = name.downcase
+      name = fully_qualified_domain_name(name.downcase)
+      @host_name = name
       if @config[:host_remove_spaces]
         @host_name = @host_name.gsub(' ', '')
       end
@@ -176,6 +178,23 @@ module EmailAddress
       else # Bad format
         self.subdomains = self.tld = self.tld2 = ""
         self.domain_name = self.registration_name = name
+      end
+    end
+
+    def fully_qualified_domain_name(host_part)
+      dn = @config[:address_fqdn_domain]
+      if !dn
+        if (host_part.nil? || host_part <= " ") && @config[:host_local]
+          'localhost'
+        else
+          host_part
+        end
+      elsif host_part.nil? || host_part <= " "
+        dn
+      elsif !host_part.include?(".")
+        host_part + "." + dn
+      else
+        host_part
       end
     end
 
@@ -310,7 +329,7 @@ module EmailAddress
 
     # True if the :dns_lookup setting is enabled
     def dns_enabled?
-      EmailAddress::Config.setting(:dns_lookup).equal?(:off) ? false : true
+      [:mx, :a].include?(EmailAddress::Config.setting(:host_validation))
     end
 
     # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
@@ -360,20 +379,22 @@ module EmailAddress
     ############################################################################
 
     # Returns true if the host name is valid according to the current configuration
-    def valid?(rule=@config[:dns_lookup]||:mx)
+    def valid?(rules={})
+      host_validation = rules[:host_validation] || @config[:host_validation] || :mxG
+      dns_lookup      = rules[:dns_lookup] || host_validation
       self.error_message = nil
       if self.ip_address
         valid_ip?
       elsif ! valid_format?
         false
-      elsif rule == :mx
+      elsif dns_lookup == :connect
+        valid_mx? && connect
+      elsif dns_lookup == :mx
         valid_mx?
-      elsif rule == :a
+      elsif dns_lookup == :a
         valid_dns?
-      elsif rule == :off
-        true
       else
-        set_error(:domain_bad_validation_rule)
+        true
       end
     end
 
@@ -384,13 +405,21 @@ module EmailAddress
 
     # True if the host name has a DNS A Record
     def valid_dns?
-      dns_a_record.size > 0 || set_error(:domain_unknown)
+      bool = dns_a_record.size > 0 || set_error(:domain_unknown)
+      if self.localhost? && !@config[:host_local]
+        bool = set_error(:domain_no_localhost)
+      end
+      bool
     end
 
     # True if the host name has valid MX servers configured in DNS
     def valid_mx?
       if self.exchangers.mx_ips.size > 0
-        true
+        if self.localhost? && !@config[:host_local]
+          set_error(:domain_no_localhost)
+        else
+          true
+        end
       elsif valid_dns?
         set_error(:domain_does_not_accept_email)
       else
@@ -412,16 +441,53 @@ module EmailAddress
     # is reachable.
     def valid_ip?
       if ! @config[:host_allow_ip]
-        set_error(:ip_address_forbidden)
+        bool = set_error(:ip_address_forbidden)
       elsif self.ip_address.include?(":")
-        self.ip_address =~ Resolv::IPv6::Regex ? true : set_error(:ipv6_address_invalid)
+        bool = self.ip_address =~ Resolv::IPv6::Regex ? true : set_error(:ipv6_address_invalid)
       elsif self.ip_address.include?(".")
-        self.ip_address =~ Resolv::IPv4::Regex ? true : set_error(:ipv4_address_invalid)
+        bool = self.ip_address =~ Resolv::IPv4::Regex ? true : set_error(:ipv4_address_invalid)
+      end
+      if bool && (localhost? && !@config[:host_local])
+        bool = set_error(:ip_address_no_localhost)
+      end
+      bool
+    end
+
+    def localhost?
+      if self.ip_address
+        if self.ip_address.include?(":")
+          return NetAddr::CIDR.create("::1").matches?(self.ip_address)
+        else
+          return NetAddr::CIDR.create("127.0.0.0/8").matches?(self.ip_address)
+        end
+      else
+        self.host_name == 'localhost'
       end
     end
 
-    def set_error(err)
+    # Connects to host to test it can receive email. This should NOT be performed
+    # as an email address check, but is provided to assist in problem resolution.
+    # If you abuse this, you *could* be blocked by the ESP.
+    def connect
+      begin
+        smtp = Net::SMTP.new(self.host_name || self.ip_address)
+        smtp.start(@config[:helo_name] || 'localhost')
+        smtp.finish
+        true
+      rescue Net::SMTPFatalError => e
+        set_error(:server_not_available, e.to_s)
+      rescue SocketError => e
+        set_error(:server_not_available, e.to_s)
+      ensure
+        if smtp && smtp.started?
+          smtp.finish
+        end
+      end
+    end
+
+    def set_error(err, reason=nil)
       @error_message = EmailAddress::Config.error_messages.fetch(err) { err }
+      @reason        = reason
       false
     end
 
