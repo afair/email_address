@@ -17,7 +17,7 @@ module EmailAddress
     %i(valid? error normal redact munge canonical reference).each do |proxy_method|
       define_method(proxy_method) do |*args, &block|
         EmailAddress::Address.new(*args).send(proxy_method, &block)
-      end
+      end if EmailAddress::Address.method_defined? proxy_method
     end
   end
 
