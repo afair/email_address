@@ -13,8 +13,12 @@ module EmailAddress
     require "email_address/canonical_email_address_type"
   end
 
-  def self.method_missing(m, *args, &block)
-    EmailAddress::Address.new(*args, &block).send(m)
+  class << self
+    %i(valid? error normal redact munge canonical reference).each do |proxy_method|
+      define_method(proxy_method) do |*args, &block|
+        EmailAddress::Address.new(*args).send(proxy_method, &block)
+      end
+    end
   end
 
   # Creates an instance of this email address.
