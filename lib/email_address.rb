@@ -14,10 +14,12 @@ module EmailAddress
   end
 
   class << self
-    %i(valid? error normal redact munge canonical reference).each do |proxy_method|
+    (%i[valid? error normal redact munge canonical reference] &
+     EmailAddress::Address.public_instance_methods
+    ).each do |proxy_method|
       define_method(proxy_method) do |*args, &block|
-        EmailAddress::Address.new(*args).send(proxy_method, &block)
-      end if EmailAddress::Address.method_defined? proxy_method
+        EmailAddress::Address.new(*args).public_send(proxy_method, &block)
+      end
     end
   end
 
