@@ -13,6 +13,20 @@ module EmailAddress
     require "email_address/canonical_email_address_type"
   end
 
+  # @!method self.valid?(options={})
+  #   Proxy method to {EmailAddress::Address#valid?}
+  # @!method self.error
+  #   Proxy method to {EmailAddress::Address#error}
+  # @!method self.normal
+  #   Proxy method to {EmailAddress::Address#normal}
+  # @!method self.redact(digest=:sha1)
+  #   Proxy method to {EmailAddress::Address#redact}
+  # @!method self.munge
+  #   Proxy method to {EmailAddress::Address#munge}
+  # @!method self.canonical
+  #   Proxy method to {EmailAddress::Address#canonical}
+  # @!method self.reference
+  #   Proxy method to {EmailAddress::Address#reference}
   class << self
     (%i[valid? error normal redact munge canonical reference] &
      EmailAddress::Address.public_instance_methods
@@ -23,20 +37,6 @@ module EmailAddress
     end
   end
 
-  # @method self.valid?(options={})
-  #   Proxy method to {EmailAddress::Address#valid?}
-  # @method self.error
-  #   Proxy method to {EmailAddress::Address#error}
-  # @method self.normal
-  #   Proxy method to {EmailAddress::Address#normal}
-  # @method self.redact(digest=:sha1)
-  #   Proxy method to {EmailAddress::Address#redact}
-  # @method self.munge
-  #   Proxy method to {EmailAddress::Address#munge}
-  # @method self.canonical
-  #   Proxy method to {EmailAddress::Address#canonical}
-  # @method self.reference
-  #   Proxy method to {EmailAddress::Address#reference}
 
   # Creates an instance of this email address.
   # This is a short-cut to Email::Address::Address.new
