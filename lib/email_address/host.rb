@@ -380,7 +380,7 @@ module EmailAddress
 
     # Returns true if the host name is valid according to the current configuration
     def valid?(rules={})
-      host_validation = rules[:host_validation] || @config[:host_validation] || :mxG
+      host_validation = rules[:host_validation] || @config[:host_validation] || :mx
       dns_lookup      = rules[:dns_lookup] || host_validation
       self.error_message = nil
       if self.ip_address

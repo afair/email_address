@@ -76,8 +76,8 @@ class TestAddress < Minitest::Test
     assert_equal '', e.hostname
     assert_equal false, e.valid? # localhost not allowed by default
     assert_equal EmailAddress.error("user1"), :domain_invalid
-    assert_equal EmailAddress.error("user1", host_local:true),nil # :domain_does_not_accept_email
-    assert_equal EmailAddress.error("user1@localhost", host_local:true), nil #:domain_does_not_accept_email
+    assert_equal EmailAddress.error("user1", host_local:true), :domain_does_not_accept_email
+    assert_equal EmailAddress.error("user1@localhost", host_local:true), :domain_does_not_accept_email
     assert_equal EmailAddress.error("user2@localhost", host_local:true, dns_lookup: :off, host_validation: :syntax), nil
   end
 
