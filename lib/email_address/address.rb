@@ -21,18 +21,24 @@ module EmailAddress
     # instance, and initializes the address to the "normalized" format of the
     # address. The original string is available in the #original method.
     def initialize(email_address, config={})
-      email_address  = email_address.strip if email_address
+      @config        = config # This needs refactoring!
+      email_address  = (email_address || "").strip
       @original      = email_address
-      email_address||= ""
       email_address  = parse_rewritten(email_address) unless config[:skip_rewrite]
-      if lh = email_address.match(/(.+)@(.+)/)
-        (_, local, host) = lh.to_a
-      else
-        (local, host)    = [email_address, '']
-      end
+      local, host    = EmailAddress::Address.split_local_host(email_address)
+
       @host         = EmailAddress::Host.new(host, config)
       @config       = @host.config
       @local        = EmailAddress::Local.new(local, @config, @host)
+    end
+
+    # Given an email address, this returns an array of [local, host] parts
+    def self.split_local_host(email)
+      if lh = email.match(/(.+)@(.+)/)
+        lh.to_a[1,2]
+      else
+        [email, '']
+      end
     end
 
     ############################################################################

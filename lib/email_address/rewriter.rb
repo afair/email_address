@@ -61,34 +61,82 @@ module EmailAddress::Rewriter
   end
 
   def srs_hash(email, options={}, &block)
+    key = options[:key] || @config[:key] || email.reverse
     if block_given?
       block.call(email)[0,4]
-    elsif options[:secret]
-      Base64.encode64(Digest::SHA1.digest(email + options[:secret].to_s))[0,4]
     else
-      # Non-Secure signing. Please give a secret
-      Base64.encode64(Digest::SHA1.digest(email.reverse))[0,4]
+      Base64.encode64(Digest::SHA1.digest(email + key))[0,4]
     end
   end
 
-  # BATV - Returns the Bounce Address Tag Validation format
+  #---------------------------------------------------------------------------
+  # Returns a BATV form email address with "Private Signature" (prvs).
+  # Options: key: 0-9 key digit to use
+  #          key_0..key_9: secret key used to sign/verify
+  #          prvs_days: number of days before address "expires"
+  #
+  # BATV - Bounce Address Tag Validation
   # PRVS - Simple Private Signature
-  # Ex:    prvs=KDDDSSSS=pat@example.com
+  # Ex:    prvs=KDDDSSSS=user@example.com
   #        * K: Digit for Key rotation
   #        * DDD: Expiry date, since 1970, low 3 digits
   #        * SSSSSS: sha1( KDDD + orig-mailfrom + key)[0,6]
-  # Source: https://tools.ietf.org/html/draft-levine-smtp-batv-01
-  def batv_prvs()
-    raise "Not yet implemented"
+  # See:   https://tools.ietf.org/html/draft-levine-smtp-batv-01
+  #---------------------------------------------------------------------------
+  def batv_prvs(options={})
+    k = options[:prvs_key_id] || "0"
+    prvs_days = options[:prvs_days] || @config[:prvs_days] || 30
+    ddd = prvs_day(prvs_days)
+    ssssss = prvs_sign(k, ddd, self.to_s, options={})
+    ["prvs=", k, ddd, ssssss, '=', self.to_s].join('')
   end
 
+  PRVS_REGEX = /\Aprvs=(\d)(\d{3})(\w{6})=(.+)\z/
+
+  def parse_prvs(email, options={})
+    if email.match(PRVS_REGEX)
+      @rewrite_scheme = :prvs
+      k, ddd, ssssss, email = [$1, $2, $3, $4]
+
+      unless ssssss == prvs_sign(k, ddd, email, options)
+        @rewrite_error = "Invalid BATV Address: Signature unverified"
+      end
+      exp = ddd.to_i
+      roll = 1000 - exp # rolling 1000 day window
+      today = prvs_day(0)
+      # I'm sure this is wrong
+      if exp > today && exp < roll
+        @rewrite_error = "Invalid SRS Email Address: Address expired"
+      elsif exp < today && (today - exp) > 0
+        @rewrite_error = "Invalid SRS Email Address: Address expired"
+      end
+      [local, domain].join("@")
+    else
+      email
+    end
+  end
+
+  def prvs_day(days)
+    ((Time.now.to_i + (days*24*60*60)) / (24*60*60)).to_s[-3,3]
+  end
+
+  def prvs_sign(k, ddd, email, options={})
+    str = [ddd, ssssss, '=', self.to_s].join('')
+    key = options["key_#{k}".to_i] || @config["key_#{k}".to_i] || str.reverse
+    Digest::SHA1.hexdigest([k,ddd, email, key].join(''))[0,6]
+  end
+
+  #---------------------------------------------------------------------------
   # VERP Embeds a recipient email address into the bounce address
   #   Bounce Address:  message-id@example.net
-  #   Recipient Email: bob@example.org
-  #   VERP :           message-id+bob=example.org@example.net
-  def verp(recipient, split_char='+', verp_at='=')
+  #   Recipient Email: recipient@example.org
+  #   VERP :           message-id+recipient=example.org@example.net
+  # To handle incoming verp, the "tag" is the recipient email address,
+  # remember to convert the last '=' into a '@' to reconstruct it.
+  #---------------------------------------------------------------------------
+  def verp(recipient, split_char='+')
     self.local.to_s +
-      split_char + recipient.gsub("@",verp_at) +
+      split_char + recipient.gsub("@","=") +
       "@" + self.hostname
   end
 
