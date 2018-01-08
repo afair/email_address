@@ -91,6 +91,14 @@ class TestAddress < Minitest::Test
     assert "aasdf-34-.z@example.com".match(EmailAddress::Address::RELAXED_REGEX)
   end
 
+  def test_srs
+    ea= "first.LAST+tag@gmail.com"
+    e = EmailAddress.new(ea)
+    s = e.srs("example.com")
+    assert s.match(EmailAddress::Address::SRS_FORMAT_REGEX)
+    assert EmailAddress.new(s).to_s == e.to_s
+  end
+
   # Quick Regression tests for addresses that should have been valid (but fixed)
   def test_issues
     assert true, EmailAddress.valid?('test@jiff.com', dns_lookup: :mx) # #7

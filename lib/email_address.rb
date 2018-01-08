@@ -5,6 +5,7 @@ module EmailAddress
   require "email_address/exchanger"
   require "email_address/host"
   require "email_address/local"
+  require "email_address/rewriter"
   require "email_address/address"
   require "email_address/version"
   require "email_address/active_record_validator" if defined?(ActiveModel)

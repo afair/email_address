@@ -6,6 +6,8 @@ module EmailAddress
   # (EmailAddress::Local) and Host (Email::AddressHost) parts.
   class Address
     include Comparable
+    include EmailAddress::Rewriter
+
     attr_accessor :original, :local, :host, :config, :reason
 
     CONVENTIONAL_REGEX = /\A#{::EmailAddress::Local::CONVENTIONAL_MAILBOX_WITHIN}
@@ -22,6 +24,7 @@ module EmailAddress
       email_address  = email_address.strip if email_address
       @original      = email_address
       email_address||= ""
+      email_address  = parse_rewritten(email_address) unless config[:skip_rewrite]
       if lh = email_address.match(/(.+)@(.+)/)
         (_, local, host) = lh.to_a
       else
