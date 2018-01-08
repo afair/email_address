@@ -29,10 +29,12 @@ class TestAddress < Minitest::Test
   def test_forms
     a = EmailAddress.new("User+tag@example.com")
     assert_equal "user+tag@example.com", a.to_s
+    assert_equal "user@example.com", a.base
     assert_equal "user@example.com", a.canonical
     assert_equal "{63a710569261a24b3766275b7000ce8d7b32e2f7}@example.com", a.redact
     assert_equal "{b58996c504c5638798eb6b511e6f49af}@example.com", a.redact(:md5)
     assert_equal "b58996c504c5638798eb6b511e6f49af", a.reference
+    assert_equal "6bdd00c53645790ad9bbcb50caa93880",  EmailAddress.reference("Gmail.User+tag@gmail.com")
   end
 
   # COMPARISON & MATCHING
@@ -58,10 +60,10 @@ class TestAddress < Minitest::Test
 
   def test_empty_address
     a = EmailAddress.new("")
-    assert_equal "{da39a3ee5e6b4b0d3255bfef95601890afd80709}", a.redact
+    assert_equal "{9a78211436f6d425ec38f5c4e02270801f3524f8}", a.redact
     assert_equal "", a.to_s
     assert_equal "", a.canonical
-    assert_equal "d41d8cd98f00b204e9800998ecf8427e", a.reference
+    assert_equal "518ed29525738cebdac49c49e60ea9d3", a.reference
   end
 
   # VALIDATION

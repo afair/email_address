@@ -121,6 +121,11 @@ module EmailAddress
       self.canonical == self.to_s
     end
 
+    # The base address is the mailbox, without tags, and host.
+    def base
+      self.mailbox + "@" + self.hostname
+    end
+
     # Returns the redacted form of the address
     # This format is defined by this libaray, and may change as usage increases.
     # Takes either :sha1 (default) or :md5 as the argument
@@ -147,15 +152,15 @@ module EmailAddress
     # use the email address MD5 instead of the actual address to refer to the
     # same shared user identity without exposing the actual address when it
     # is not known in common.
-    def reference
-      Digest::MD5.hexdigest(self.canonical)
+    def reference(form=:base)
+      Digest::MD5.hexdigest(self.send(form))
     end
     alias :md5 :reference
 
     # This returns the SHA1 digest (in a hex string) of the canonical email
     # address. See #md5 for more background.
-    def sha1
-      Digest::SHA1.hexdigest((canonical||"") + (@config[:sha1_secret]||""))
+    def sha1(form=:base)
+      Digest::SHA1.hexdigest((self.send(form)||"") + (@config[:sha1_secret]||""))
     end
 
     #---------------------------------------------------------------------------

@@ -89,15 +89,20 @@ introduces terms to distinguish types of email addresses.
 
     madness!."()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a(comment )"@example.org
 
+* *Base* - A unique mailbox without tags. For gmail, is uses the incoming
+  punctation, essential when building an MD5 or SHA1 to match services
+  like Gravatar, and email address digest interchange.
+
 * *Canonical* - An unique account address, lower-cased, without the
   tag, and with irrelevant characters stripped.
 
     clark.kent+scoops@gmail.com => clarkkent@gmail.com
 
-* *Reference* - The MD5 of the Canonical format, used to share account
+* *Reference* - The MD5 of the Base format, used to share account
   references without exposing the private email address directly.
 
-    Clark.Kent+scoops@gmail.com => c5be3597c391169a5ad2870f9ca51901
+    Clark.Kent+scoops@gmail.com =>
+    clark.kent@gmail.com => 1429a1dfc797d6e93075fef011c373fb
 
 * *Redacted* - A form of the email address where it is replaced by
   a SHA1-based version to remove the original address from the
