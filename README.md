@@ -350,7 +350,7 @@ e1 == e2          #=> false (Matches by normalized address)
 e1.same_as?(e2)   #=> true  (Matches as canonical address)
 e1.same_as?(e3)   #=> true  (Matches as redacted address)
 e1 < e2           #=> true  (Compares using normalized address)
-```ruby
+```
 
 #### Matching
 
