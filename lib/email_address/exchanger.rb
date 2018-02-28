@@ -92,14 +92,22 @@ module EmailAddress
 
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.
     def in_cidr?(cidr)
-      c = NetAddr::CIDR.create(cidr)
       if cidr.include?(":")
-        mx_ips.find { |ip| ip.include?(":") && c.matches?(ip) } ? true : false
+        c = NetAddr::IPv6Net.parse(cidr)
+        return true if mx_ips.find do |ip|
+          next unless ip.include?(":")
+          rel = c.rel NetAddr::IPv6Net.parse(ip)
+          !rel.nil? && rel >= 0
+        end
       elsif cidr.include?(".")
-        mx_ips.find { |ip| !ip.include?(":") && c.matches?(ip) } ? true : false
-      else
-        false
+        c = NetAddr::IPv4Net.parse(cidr)
+        return true if mx_ips.find do |ip|
+          next if ip.include?(":")
+          rel = c.rel NetAddr::IPv4Net.parse(ip)
+          !rel.nil? && rel >= 0
+        end
       end
+      false
     end
   end
 end
