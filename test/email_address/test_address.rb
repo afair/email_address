@@ -80,14 +80,14 @@ class TestAddress < Minitest::Test
     assert_equal EmailAddress.error("user1"), :domain_invalid
     assert_equal EmailAddress.error("user1", host_local:true), :domain_does_not_accept_email
     assert_equal EmailAddress.error("user1@localhost", host_local:true), :domain_does_not_accept_email
-    assert_equal EmailAddress.error("user2@localhost", host_local:true, dns_lookup: :off, host_validation: :syntax), nil
+    assert_nil EmailAddress.error("user2@localhost", host_local:true, dns_lookup: :off, host_validation: :syntax)
   end
 
   def test_regexen
     assert "First.Last+TAG@example.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
     assert "First.Last+TAG@example.com".match(EmailAddress::Address::STANDARD_REGEX)
-    assert_equal nil, "First.Last+TAGexample.com".match(EmailAddress::Address::STANDARD_REGEX)
-    assert_equal nil, "First#Last+TAGexample.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
+    assert_nil "First.Last+TAGexample.com".match(EmailAddress::Address::STANDARD_REGEX)
+    assert_nil "First#Last+TAGexample.com".match(EmailAddress::Address::CONVENTIONAL_REGEX)
     assert "aasdf-34-.z@example.com".match(EmailAddress::Address::RELAXED_REGEX)
   end
 

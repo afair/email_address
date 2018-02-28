@@ -113,10 +113,10 @@ class TestHost < MiniTest::Test
   end
 
   def test_errors
-    assert_equal EmailAddress::Host.new("yahoo.com").error, nil
+    assert_nil EmailAddress::Host.new("yahoo.com").error
     assert_equal EmailAddress::Host.new("example.com").error, :domain_does_not_accept_email
     assert_equal EmailAddress::Host.new("yahoo.wtf").error, :domain_unknown
-    assert_equal EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", host_validation: :syntax).error, nil
+    assert_nil EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", host_validation: :syntax).error
     assert_equal EmailAddress::Host.new("ya  hoo.com", host_validation: :syntax).error, :domain_invalid
     assert_equal EmailAddress::Host.new("[127.0.0.1]").error, :ip_address_forbidden
     assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip:true).error, :ipv4_address_invalid
