@@ -18,11 +18,11 @@ class TestConfig < MiniTest::Test
   end
 
   def test_provider
-    assert_equal nil, EmailAddress::Config.provider(:github)
+    assert_nil EmailAddress::Config.provider(:github)
     EmailAddress::Config.provider(:github, host_match: %w(github.com), local_format: :standard)
     assert_equal :standard, EmailAddress::Config.provider(:github)[:local_format]
     assert_equal :github, EmailAddress::Host.new("github.com").provider
     EmailAddress::Config.providers.delete(:github)
-    assert_equal nil, EmailAddress::Config.provider(:github)
+    assert_nil EmailAddress::Config.provider(:github)
   end
 end
