@@ -31,5 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "codeclimate-test-reporter"
 
   spec.add_dependency "simpleidn"
-  spec.add_dependency "netaddr", "~> 1.5.1"
+  spec.add_dependency "netaddr", "~> 2.0"
 end

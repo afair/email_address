@@ -455,11 +455,17 @@ module EmailAddress
 
     def localhost?
       if self.ip_address
-        if self.ip_address.include?(":")
-          return NetAddr::CIDR.create("::1").matches?(self.ip_address)
-        else
-          return NetAddr::CIDR.create("127.0.0.0/8").matches?(self.ip_address)
-        end
+        rel =
+          if self.ip_address.include?(":")
+            NetAddr::IPv6Net.parse("::1").rel(
+              NetAddr::IPv6Net.parse(self.ip_address)
+            )
+          else
+            NetAddr::IPv4Net.parse("127.0.0.0/8").rel(
+              NetAddr::IPv4Net.parse(self.ip_address)
+            )
+          end
+        !rel.nil? && rel >= 0
       else
         self.host_name == 'localhost'
       end
