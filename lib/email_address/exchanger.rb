@@ -6,7 +6,7 @@ module EmailAddress
   class Exchanger
     include Enumerable
 
-    def self.cached(host)
+    def self.cached(host, config={})
       @host_cache ||= {}
       @cache_size ||= ENV['EMAIL_ADDRESS_CACHE_SIZE'].to_i || 100
       if @host_cache.has_key?(host)
@@ -14,9 +14,9 @@ module EmailAddress
         @host_cache[host] = o # LRU cache, move to end
       elsif @host_cache.size >= @cache_size
         @host_cache.delete(@host_cache.keys.first)
-        @host_cache[host] = new(host)
+        @host_cache[host] = new(host, config)
       else
-        @host_cache[host] = new(host)
+        @host_cache[host] = new(host, config)
       end
     end
 
@@ -44,7 +44,11 @@ module EmailAddress
 
     # Returns: [["mta7.am0.yahoodns.net", "66.94.237.139", 1], ["mta5.am0.yahoodns.net", "67.195.168.230", 1], ["mta6.am0.yahoodns.net", "98.139.54.60", 1]]
     # If not found, returns []
+    # Returns a dummy record when dns_lookup is turned off since it may exists, though
+    # may not find provider by MX name or IP. I'm not sure about the "0.0.0.0" ip, it should
+    # be good in this context, but in "listen" context it means "all bound IP's"
     def mxers
+      return [["example.com", "0.0.0.0", 1]] if @config[:dns_lookup] == :off
       @mxers ||= Resolv::DNS.open do |dns|
         ress = dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
         records = ress.map do |r|
@@ -69,6 +73,7 @@ module EmailAddress
 
     # Returns an array of MX IP address (String) for the given email domain
     def mx_ips
+      return ["0.0.0.0"] if @config[:dns_lookup] == :off
       mxers.map {|m| m[1] }
     end
 

@@ -334,6 +334,7 @@ module EmailAddress
 
     # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
     def dns_a_record
+      @_dns_a_record = "0.0.0.0" if @config[:dns_lookup] == :off
       @_dns_a_record ||= Socket.gethostbyname(self.dns_name)
     rescue SocketError # not found, but could also mean network not work
       @_dns_a_record ||= []
@@ -343,7 +344,7 @@ module EmailAddress
     # The array will be empty if none are configured.
     def exchangers
       return nil if @config[:host_type] != :email || !self.dns_enabled?
-      @_exchangers ||= EmailAddress::Exchanger.cached(self.dns_name)
+      @_exchangers ||= EmailAddress::Exchanger.cached(self.dns_name, @config)
     end
 
     # Returns a DNS TXT Record

@@ -23,9 +23,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler",      "~> 1.3"
   if RUBY_PLATFORM == 'java'
     spec.add_development_dependency "activerecord", "=  4.2.5"
-    spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", '=1.3.19'
+    spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", '~> 1.3.19'
   else
-    spec.add_development_dependency "activerecord", "~> 5.2.0.rc2"
+    spec.add_development_dependency "activerecord", "~> 5.2.0"
     spec.add_development_dependency "sqlite3"
   end
   spec.add_development_dependency "codeclimate-test-reporter"

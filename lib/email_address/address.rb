@@ -259,7 +259,7 @@ module EmailAddress
         smtp.start(@config[:smtp_helo_name] || 'localhost')
         smtp.mailfrom @config[:smtp_mail_from] || 'postmaster@localhost'
         smtp.rcptto self.to_s
-        p [:connect]
+        #p [:connect]
         smtp.finish
         true
       rescue Net::SMTPUnknownError => e
