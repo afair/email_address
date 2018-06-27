@@ -112,4 +112,8 @@ class TestAddress < Minitest::Test
     assert ! EmailAddress.valid?('example.user@foo.com/')
   end
 
+  def test_relaxed_normal
+    assert ! EmailAddress.new('a.c.m.e.-industries@foo.com').valid?
+    assert true, EmailAddress.new('a.c.m.e.-industries@foo.com', local_format: :relaxed).valid?
+  end
 end
