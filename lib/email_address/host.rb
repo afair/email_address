@@ -415,7 +415,9 @@ module EmailAddress
 
     # True if the host name has valid MX servers configured in DNS
     def valid_mx?
-      if self.exchangers.mx_ips.size > 0
+      if self.exchangers.blank?
+        set_error(:domain_unknown)
+      elsif self.exchangers.mx_ips.size > 0
         if self.localhost? && !@config[:host_local]
           set_error(:domain_no_localhost)
         else
