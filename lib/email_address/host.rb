@@ -457,11 +457,11 @@ module EmailAddress
       if self.ip_address
         rel =
           if self.ip_address.include?(":")
-            NetAddr::IPv6Net.parse(+"::1").rel(
+            NetAddr::IPv6Net.parse(""+"::1").rel(
               NetAddr::IPv6Net.parse(self.ip_address)
             )
           else
-            NetAddr::IPv4Net.parse(+"127.0.0.0/8").rel(
+            NetAddr::IPv4Net.parse(""+"127.0.0.0/8").rel(
               NetAddr::IPv4Net.parse(self.ip_address)
             )
           end
