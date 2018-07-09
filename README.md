@@ -22,6 +22,9 @@ address validator and attributes API custom datatypes.
 
 Requires Ruby 2.0 or later.
 
+Looking for a Javascript version of this library? Check out the
+[email_address](https://www.npmjs.com/package/email_address) npm module.
+
 ## Quick Start
 
 To quickly validate email addresses, use the valid? and error helpers.
