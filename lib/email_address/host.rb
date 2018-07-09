@@ -430,10 +430,10 @@ module EmailAddress
     # True if the host_name passes Regular Expression match and size limits.
     def valid_format?
       if self.host_name =~ CANONICAL_HOST_REGEX && self.to_s.size <= MAX_HOST_LENGTH
-        true
-      else
-        set_error(:domain_invalid)
+        return true if localhost?
+        return true if self.host_name.include?(".") # require FQDN
       end
+      set_error(:domain_invalid)
     end
 
     # Returns true if the IP address given in that form of the host name
