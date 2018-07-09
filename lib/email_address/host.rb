@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require 'simpleidn'
 require 'resolv'
@@ -402,11 +401,6 @@ module EmailAddress
       end
     end
 
-    # The inverse of valid? -- Returns nil (falsey) if valid, otherwise error message
-    def error
-      valid? ? nil : @error_message
-    end
-
     # True if the host name has a DNS A Record
     def valid_dns?
       bool = dns_a_record.size > 0 || set_error(:domain_unknown)
@@ -504,10 +498,7 @@ module EmailAddress
       false
     end
 
-    def error_message
-      @error_message
-    end
-
+    # The inverse of valid? -- Returns nil (falsey) if valid, otherwise error message
     def error
       self.valid? ? nil : @error_message
     end
