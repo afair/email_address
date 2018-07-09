@@ -114,12 +114,12 @@ class TestHost < MiniTest::Test
 
   def test_errors
     assert_nil EmailAddress::Host.new("yahoo.com").error
-    assert_equal EmailAddress::Host.new("example.com").error, :domain_does_not_accept_email
-    assert_equal EmailAddress::Host.new("yahoo.wtf").error, :domain_unknown
+    assert_equal EmailAddress::Host.new("example.com").error, "This domain is not configured to accept email"
+    assert_equal EmailAddress::Host.new("yahoo.wtf").error, "Domain name not registered"
     assert_nil EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", host_validation: :syntax).error
-    assert_equal EmailAddress::Host.new("ya  hoo.com", host_validation: :syntax).error, :domain_invalid
-    assert_equal EmailAddress::Host.new("[127.0.0.1]").error, :ip_address_forbidden
-    assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip:true).error, :ipv4_address_invalid
-    assert_equal EmailAddress::Host.new("[IPv6::12t]", host_allow_ip:true).error, :ipv6_address_invalid
+    assert_equal EmailAddress::Host.new("ya  hoo.com", host_validation: :syntax).error, "Invalid Domain Name"
+    assert_equal EmailAddress::Host.new("[127.0.0.1]").error, "IP Addresses are not allowed"
+    assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip:true).error, "This is not a valid IPv4 address"
+    assert_equal EmailAddress::Host.new("[IPv6::12t]", host_allow_ip:true).error, "This is not a valid IPv6 address"
   end
 end

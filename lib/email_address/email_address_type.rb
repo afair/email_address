@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 ################################################################################
 # ActiveRecord v5.0 Custom Type
 #

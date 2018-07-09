@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module EmailAddress
 
   # ActiveRecord validator class for validating an email

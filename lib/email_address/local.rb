@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module EmailAddress
   ##############################################################################
   # EmailAddress Local part consists of
@@ -103,6 +105,7 @@ module EmailAddress
       self.config   = config.empty? ? EmailAddress::Config.all_settings : config
       self.local    = local
       @host         = host
+      @error        = @error_message = nil
     end
 
     def local=(raw)
@@ -301,21 +304,23 @@ module EmailAddress
     end
 
     def valid_size?
+      return set_error(:local_size_long) if self.local.size > STANDARD_MAX_SIZE
       if @host && @host.hosted_service?
-        return false if @config[:local_private_size] &&
-                      !@config[:local_private_size].include?(self.local.size)
-      else
-        return false if @config[:local_size] &&
-                       !@config[:local_size].include?(self.local.size)
+        return false if @config[:local_private_size] && !valid_size_checks(@config[:local_private_size])
       end
-      return false if @config[:mailbox_size] && !@config[:mailbox_size].include?(self.mailbox.size)
-      return false if self.local.size > STANDARD_MAX_SIZE
+      return false if @config[:local_size] && !valid_size_checks(@config[:local_size])
+      return false if @config[:mailbox_size] && !valid_size_checks(@config[:mailbox_size])
+      true
+    end
+
+    def valid_size_checks(range)
+      return set_error(:local_size_short) if self.mailbox.size < range.first
+      return set_error(:local_size_long)  if self.mailbox.size > range.last
       true
     end
 
     def valid_encoding?(enc=@config[:local_encoding]||:ascii)
       return false if enc == :ascii && self.unicode?
-      #return false if enc == :unicode && self.ascii?
       true
     end
 
@@ -365,5 +370,21 @@ module EmailAddress
       end
       false
     end
+
+    def set_error(err, reason=nil)
+      @error = err
+      @reason= reason
+      @error_message = EmailAddress::Config.error_message(err)
+      false
+    end
+
+    def error_message
+      @error_message
+    end
+
+    def error
+      self.valid? ? nil : @error
+    end
+
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'simpleidn'
 require 'resolv'
 require 'netaddr'
@@ -88,6 +90,7 @@ module EmailAddress
       @original            = host_name ||= ''
       config[:host_type] ||= :email
       @config              = config
+      @error               = @error_message = nil
       parse(host_name)
     end
 
@@ -460,11 +463,11 @@ module EmailAddress
       if self.ip_address
         rel =
           if self.ip_address.include?(":")
-            NetAddr::IPv6Net.parse("::1").rel(
+            NetAddr::IPv6Net.parse(+"::1").rel(
               NetAddr::IPv6Net.parse(self.ip_address)
             )
           else
-            NetAddr::IPv4Net.parse("127.0.0.0/8").rel(
+            NetAddr::IPv4Net.parse(+"127.0.0.0/8").rel(
               NetAddr::IPv4Net.parse(self.ip_address)
             )
           end
@@ -495,9 +498,18 @@ module EmailAddress
     end
 
     def set_error(err, reason=nil)
-      @error_message = EmailAddress::Config.error_messages.fetch(err) { err }
+      @error         = err
       @reason        = reason
+      @error_message = EmailAddress::Config.error_message(err)
       false
+    end
+
+    def error_message
+      @error_message
+    end
+
+    def error
+      self.valid? ? nil : @error_message
     end
 
   end

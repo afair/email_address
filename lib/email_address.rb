@@ -1,4 +1,7 @@
+# frozen_string_literal: true
 
+# EmailAddress parses and validates email addresses against RFC standard,
+# conventional, canonical, formats and other special uses.
 module EmailAddress
 
   require "email_address/config"

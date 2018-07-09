@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'digest/sha1'
 require 'digest/md5'
 
@@ -30,6 +32,7 @@ module EmailAddress
       @host         = EmailAddress::Host.new(host, config)
       @config       = @host.config
       @local        = EmailAddress::Local.new(local, @config, @host)
+      @error        = @error_message = nil
     end
 
     # Given an email address, this returns an array of [local, host] parts
@@ -228,7 +231,7 @@ module EmailAddress
     def valid?(options={})
       @error = nil
       unless self.local.valid?
-        return set_error :invalid_mailbox
+        return set_error self.local.error
       end
       unless self.host.valid?
         return set_error self.host.error_message
@@ -277,17 +280,18 @@ module EmailAddress
     end
 
     def set_error(err, reason=nil)
-      @error = EmailAddress::Config.error_messages.fetch(err) { err }
+      @error = err
       @reason= reason
+      @error_message = EmailAddress::Config.error_message(err)
       false
     end
 
     def error_message
-      @error
+      @error_message
     end
 
     def error
-      self.valid? ? nil : @error
+      self.valid? ? nil : @error_message
     end
 
   end

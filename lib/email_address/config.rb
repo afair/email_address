@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module EmailAddress
   # Global configurations and for default/unknown providers. Settings are:
   #
@@ -92,6 +94,8 @@ module EmailAddress
   # * exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
   #
 
+  require 'yaml'
+
   class Config
     @config = {
       dns_lookup:         :mx,  # :mx, :a, :off
@@ -121,6 +125,7 @@ module EmailAddress
       address_fqdn_domain: nil, # Fully Qualified Domain Name = [host].[domain.tld]
     }
 
+    # 2018-04: AOL and Yahoo now under "oath.com", owned by Verizon. Keeping separate for now
     @providers = {
       aol: {
         host_match:       %w(aol. compuserve. netscape. aim. cs.),
@@ -142,14 +147,10 @@ module EmailAddress
       },
     }
 
-    @errors = {
-      invalid_address:    "Invalid Email Address",
-      invalid_mailbox:    "Invalid Recipient/Mailbox",
-      invalid_host:       "Invalid Host/Domain Name",
-      exceeds_size:       "Address too long",
-      not_allowed:        "Address is not allowed",
-      incomplete_domain:  "Domain name is incomplete",
-    }
+
+    # Loads messages: {"en"=>{"email_address"=>{"invalid_address"=>"Invalid Email Address",...}}}
+    # Rails/I18n gem: t(email_address.error, scope: "email_address")
+    @errors = YAML.load_file(File.dirname(__FILE__)+"/messages.yaml")
 
     # Set multiple default configuration settings
     def self.configure(config={})
@@ -175,6 +176,10 @@ module EmailAddress
         @providers[name].merge!(config)
       end
       @providers[name]
+    end
+
+    def self.error_message(name, locale="en")
+      @errors[locale]["email_address"][name.to_s] || name.to_s
     end
 
     # Customize your own error message text.
