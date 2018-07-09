@@ -189,7 +189,7 @@ module EmailAddress
         self.conventional
       elsif form == :canonical
         self.canonical
-      elsif form == :relax
+      elsif form == :relaxed
         self.relax
       elsif form == :standard
         self.standard
