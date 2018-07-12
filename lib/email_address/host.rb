@@ -352,8 +352,14 @@ module EmailAddress
     # Returns a DNS TXT Record
     def txt(alternate_host=nil)
       Resolv::DNS.open do |dns|
-        records = dns.getresources(alternate_host || self.dns_name,
+        dns.timeouts = @config[:dns_timeout] if @config[:dns_timeout]
+        records = begin
+          dns.getresources(alternate_host || self.dns_name,
                          Resolv::DNS::Resource::IN::TXT)
+        rescue Resolv::ResolvTimeout
+          []
+        end
+
         records.empty? ? nil : records.map(&:data).join(" ")
       end
     end
