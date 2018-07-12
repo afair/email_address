@@ -345,7 +345,7 @@ module EmailAddress
     # Returns an array of EmailAddress::Exchanger hosts configured in DNS.
     # The array will be empty if none are configured.
     def exchangers
-      return nil if @config[:host_type] != :email || !self.dns_enabled?
+      #return nil if @config[:host_type] != :email || !self.dns_enabled?
       @_exchangers ||= EmailAddress::Exchanger.cached(self.dns_name, @config)
     end
 
@@ -412,7 +412,7 @@ module EmailAddress
 
     # True if the host name has valid MX servers configured in DNS
     def valid_mx?
-      if self.exchangers.blank?
+      if self.exchangers.nil?
         set_error(:domain_unknown)
       elsif self.exchangers.mx_ips.size > 0
         if self.localhost? && !@config[:host_local]
