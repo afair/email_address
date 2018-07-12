@@ -307,8 +307,9 @@ module EmailAddress
       return set_error(:local_size_long) if self.local.size > STANDARD_MAX_SIZE
       if @host && @host.hosted_service?
         return false if @config[:local_private_size] && !valid_size_checks(@config[:local_private_size])
+      else
+        return false if @config[:local_size] && !valid_size_checks(@config[:local_size])
       end
-      return false if @config[:local_size] && !valid_size_checks(@config[:local_size])
       return false if @config[:mailbox_size] && !valid_size_checks(@config[:mailbox_size])
       true
     end
