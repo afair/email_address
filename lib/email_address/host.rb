@@ -426,7 +426,7 @@ module EmailAddress
         else
           true
         end
-      elsif valid_dns?
+      elsif @config[:dns_timeout].nil? && valid_dns?
         set_error(:domain_does_not_accept_email)
       else
         set_error(:domain_unknown)
