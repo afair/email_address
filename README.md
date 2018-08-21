@@ -429,11 +429,14 @@ matches against the Mail Exchanger (SMTP receivers) hosts defined in
 DNS. If you specify an exchanger pattern, but requires a DNS MX lookup.
 
 For Rails application, create an initializer file with your default
-configuration options:
+configuration options.
+EmailAddress::Config.setting takes a single setting name and value,
+while EmailAddress::Config.configure takes a hash of multiple settings.
 
 ```ruby
 # ./config/initializers/email_address.rb
-EmailAddress::Config.setting( local_format: :relaxed )
+EmailAddress::Config.setting( :local_format, :relaxed )
+EmailAddress::Config.configure( local_format: :relaxed, ... )
 EmailAddress::Config.provider(:github,
        host_match: %w(github.com), local_format: :standard)
 ```
