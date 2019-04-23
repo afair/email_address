@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-module EmailAddress
+module CheckEmailAddress
 
   # ActiveRecord validator class for validating an email
   # address with this library.
   # Note the initialization happens once per process.
   #
   # Usage:
-  #    validates_with EmailAddress::ActiveRecordValidator, field: :name
+  #    validates_with CheckEmailAddress::ActiveRecordValidator, field: :name
   #
   # Options:
   # * field: email,
@@ -35,10 +35,10 @@ module EmailAddress
 
     def validate_email(r,f)
       return if r[f].nil?
-      e = EmailAddress.new(r[f])
+      e = CheckEmailAddress.new(r[f])
       unless e.valid?
         r.errors[f] << (@opt[:message] ||
-                       EmailAddress::Config.error_messages[:invalid_address] ||
+                       CheckEmailAddress::Config.error_messages[:invalid_address] ||
                        "Invalid Email Address")
       end
     end

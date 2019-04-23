@@ -32,9 +32,9 @@ ApplicationRecord.connection.execute(
   "create table users ( email varchar, canonical_email varchar)")
 
 if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
-  ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
+  ActiveRecord::Type.register(:email_address, CheckEmailAddress::CheckEmailAddressType)
   ActiveRecord::Type.register(:canonical_email_address,
-                              EmailAddress::CanonicalEmailAddressType)
+                              CheckEmailAddress::CanonicalCheckEmailAddressType)
 end
 
 ################################################################################
@@ -48,7 +48,7 @@ class User < ApplicationRecord
     attribute :canonical_email, :canonical_email_address
   end
 
-  validates_with EmailAddress::ActiveRecordValidator,
+  validates_with CheckEmailAddress::ActiveRecordValidator,
     fields: %i(email canonical_email)
 
   def email=(email_address)
@@ -57,14 +57,14 @@ class User < ApplicationRecord
   end
 
   def self.find_by_email(email)
-    user   = self.find_by(email: EmailAddress.normal(email))
-    user ||= self.find_by(canonical_email: EmailAddress.canonical(email))
-    user ||= self.find_by(canonical_email: EmailAddress.redacted(email))
+    user   = self.find_by(email: CheckEmailAddress.normal(email))
+    user ||= self.find_by(canonical_email: CheckEmailAddress.canonical(email))
+    user ||= self.find_by(canonical_email: CheckEmailAddress.redacted(email))
     user
   end
 
   def redact!
-    self[:canonical_email] = EmailAddress.redact(self.canonical_email)
+    self[:canonical_email] = CheckEmailAddress.redact(self.canonical_email)
     self[:email]           = self[:canonical_email]
   end
 

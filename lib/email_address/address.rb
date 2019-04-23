@@ -3,21 +3,21 @@
 require 'digest/sha1'
 require 'digest/md5'
 
-module EmailAddress
+module CheckEmailAddress
   # Implements the Email Address container, which hold the Local
-  # (EmailAddress::Local) and Host (Email::AddressHost) parts.
+  # (CheckEmailAddress::Local) and Host (Email::AddressHost) parts.
   class Address
     include Comparable
-    include EmailAddress::Rewriter
+    include CheckEmailAddress::Rewriter
 
     attr_accessor :original, :local, :host, :config, :reason
 
-    CONVENTIONAL_REGEX = /\A#{::EmailAddress::Local::CONVENTIONAL_MAILBOX_WITHIN}
-                           @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
-    STANDARD_REGEX     = /\A#{::EmailAddress::Local::STANDARD_LOCAL_WITHIN}
-                           @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
-    RELAXED_REGEX      = /\A#{::EmailAddress::Local::RELAXED_MAILBOX_WITHIN}
-                           @#{::EmailAddress::Host::DNS_HOST_REGEX}\z/x
+    CONVENTIONAL_REGEX = /\A#{::CheckEmailAddress::Local::CONVENTIONAL_MAILBOX_WITHIN}
+                           @#{::CheckEmailAddress::Host::DNS_HOST_REGEX}\z/x
+    STANDARD_REGEX     = /\A#{::CheckEmailAddress::Local::STANDARD_LOCAL_WITHIN}
+                           @#{::CheckEmailAddress::Host::DNS_HOST_REGEX}\z/x
+    RELAXED_REGEX      = /\A#{::CheckEmailAddress::Local::RELAXED_MAILBOX_WITHIN}
+                           @#{::CheckEmailAddress::Host::DNS_HOST_REGEX}\z/x
 
     # Given an email address of the form "local@hostname", this sets up the
     # instance, and initializes the address to the "normalized" format of the
@@ -27,11 +27,11 @@ module EmailAddress
       email_address  = (email_address || "").strip
       @original      = email_address
       email_address  = parse_rewritten(email_address) unless config[:skip_rewrite]
-      local, host    = EmailAddress::Address.split_local_host(email_address)
+      local, host    = CheckEmailAddress::Address.split_local_host(email_address)
 
-      @host         = EmailAddress::Host.new(host, config)
+      @host         = CheckEmailAddress::Host.new(host, config)
       @config       = @host.config
-      @local        = EmailAddress::Local.new(local, @config, @host)
+      @local        = CheckEmailAddress::Local.new(local, @config, @host)
       @error        = @error_message = nil
     end
 
@@ -115,7 +115,7 @@ module EmailAddress
     alias :to_s :normal
 
     def inspect
-      "#<EmailAddress::Address:0x#{self.object_id.to_s(16)} address=\"#{self.to_s}\">"
+      "#<CheckEmailAddress::Address:0x#{self.object_id.to_s(16)} address=\"#{self.to_s}\">"
     end
 
     # Returns the canonical email address according to the provider
@@ -191,7 +191,7 @@ module EmailAddress
     # of this addres with another, using the canonical or redacted forms.
     def same_as?(other_email)
       if other_email.is_a?(String)
-        other_email = EmailAddress::Address.new(other_email)
+        other_email = CheckEmailAddress::Address.new(other_email)
       end
 
       self.canonical   == other_email.canonical ||
@@ -282,7 +282,7 @@ module EmailAddress
     def set_error(err, reason=nil)
       @error = err
       @reason= reason
-      @error_message = EmailAddress::Config.error_message(err)
+      @error_message = CheckEmailAddress::Config.error_message(err)
       false
     end
 

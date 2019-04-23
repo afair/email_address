@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module EmailAddress
+module CheckEmailAddress
   ##############################################################################
-  # EmailAddress Local part consists of
+  # CheckEmailAddress Local part consists of
   # - comments
   # - mailbox
   # - tag
@@ -102,7 +102,7 @@ module EmailAddress
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
 
     def initialize(local, config={}, host=nil)
-      self.config   = config.empty? ? EmailAddress::Config.all_settings : config
+      self.config   = config.empty? ? CheckEmailAddress::Config.all_settings : config
       self.local    = local
       @host         = host
       @error        = @error_message = nil
@@ -375,7 +375,7 @@ module EmailAddress
     def set_error(err, reason=nil)
       @error = err
       @reason= reason
-      @error_message = EmailAddress::Config.error_message(err)
+      @error_message = CheckEmailAddress::Config.error_message(err)
       false
     end
 

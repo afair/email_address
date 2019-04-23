@@ -32,11 +32,11 @@ To quickly validate email addresses, use the valid? and error helpers.
 a basic error message.
 
 ```ruby
-EmailAddress.valid? "allen@google.com" #=> true
-EmailAddress.error "allen@bad-d0main.com" #=> "Invalid Host/Domain Name"
+CheckEmailAddress.valid? "allen@google.com" #=> true
+CheckEmailAddress.error "allen@bad-d0main.com" #=> "Invalid Host/Domain Name"
 ```
 
-`EmailAddress` deeply validates your email addresses. It checks:
+`CheckEmailAddress` deeply validates your email addresses. It checks:
 
 * Host name format and DNS setup
 * Mailbox format according to "conventional" form. This matches most used user
@@ -54,15 +54,15 @@ provider (such as Google Apps).  Note that `example.com`, while
 a valid domain name, does not have MX records.
 
 ```ruby
-EmailAddress.valid? "allen@example.com" #=> false
-EmailAddress.valid? "allen@example.com", host_validation: :syntax #=> true
+CheckEmailAddress.valid? "allen@example.com" #=> false
+CheckEmailAddress.valid? "allen@example.com", host_validation: :syntax #=> true
 ```
 
 Most mail servers do not yet support Unicode mailboxes, so the default here is ASCII.
 
 ```ruby
-EmailAddress.error "Pelé@google.com" #=> "Invalid Recipient/Mailbox"
-EmailAddress.valid? "Pelé@google.com", local_encoding: :unicode #=> true
+CheckEmailAddress.error "Pelé@google.com" #=> "Invalid Recipient/Mailbox"
+CheckEmailAddress.valid? "Pelé@google.com", local_encoding: :unicode #=> true
 ```
 
 ## Background
@@ -201,7 +201,7 @@ require 'email_address'
 
 ## Usage
 
-Use `EmailAddress` to do transformations and validations. You can also
+Use `CheckEmailAddress` to do transformations and validations. You can also
 instantiate an object to inspect the address.
 
 These top-level helpers return edited email addresses and validation
@@ -209,20 +209,20 @@ check.
 
 ```ruby
 address = "Clark.Kent+scoops@gmail.com"
-EmailAddress.valid?(address)    #=> true
-EmailAddress.normal(address)    #=> "clark.kent+scoops@gmail.com"
-EmailAddress.canonical(address) #=> "clarkkent@gmail.com"
-EmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
-EmailAddress.redact(address)    #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
-EmailAddress.munge(address)     #=> "cl*****@gm*****"
-EmailAddress.matches?(address, 'google') #=> 'google' (true)
-EmailAddress.error("#bad@example.com") #=> "Invalid Mailbox"
+CheckEmailAddress.valid?(address)    #=> true
+CheckEmailAddress.normal(address)    #=> "clark.kent+scoops@gmail.com"
+CheckEmailAddress.canonical(address) #=> "clarkkent@gmail.com"
+CheckEmailAddress.reference(address) #=> "c5be3597c391169a5ad2870f9ca51901"
+CheckEmailAddress.redact(address)    #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
+CheckEmailAddress.munge(address)     #=> "cl*****@gm*****"
+CheckEmailAddress.matches?(address, 'google') #=> 'google' (true)
+CheckEmailAddress.error("#bad@example.com") #=> "Invalid Mailbox"
 ```
 
 Or you can create an instance of the email address to work with it.
 
 ```ruby
-email = EmailAddress.new(address) #=> #<EmailAddress::Address:0x007fe6ee150540 ...>
+email = CheckEmailAddress.new(address) #=> #<CheckEmailAddress::Address:0x007fe6ee150540 ...>
 email.normal        #=> "clark.kent+scoops@gmail.com"
 email.canonical     #=> "clarkkent@gmail.com"
 email.original      #=> "Clark.Kent+scoops@gmail.com"
@@ -243,22 +243,22 @@ email.tag           #=> "scoops"
 email.host.exchanger.first[:ip] #=> "2a00:1450:400b:c02::1a"
 email.host.txt_hash #=> {:v=>"spf1", :redirect=>"\_spf.google.com"}
 
-EmailAddress.normal("HIRO@こんにちは世界.com")
+CheckEmailAddress.normal("HIRO@こんにちは世界.com")
                     #=> "hiro@xn--28j2a3ar1pp75ovm7c.com"
-EmailAddress.normal("hiro@xn--28j2a3ar1pp75ovm7c.com", host_encoding: :unicode)
+CheckEmailAddress.normal("hiro@xn--28j2a3ar1pp75ovm7c.com", host_encoding: :unicode)
                     #=> "hiro@こんにちは世界.com"
 ```
 
 #### Rails Validator
 
-For Rails' ActiveRecord classes, EmailAddress provides an ActiveRecordValidator.
+For Rails' ActiveRecord classes, CheckEmailAddress provides an ActiveRecordValidator.
 Specify your email address attributes with `field: :user_email`, or
 `fields: [:email1, :email2]`. If neither is given, it assumes to use the
 `email` or `email_address` attribute.
 
 ```ruby
 class User < ActiveRecord::Base
-  validates_with EmailAddress::ActiveRecordValidator, field: :email
+  validates_with CheckEmailAddress::ActiveRecordValidator, field: :email
 end
 ```
 
@@ -271,9 +271,9 @@ First, you need to register the type in
 configurations you want.
 
 ```ruby
-ActiveRecord::Type.register(:email_address, EmailAddress::EmailAddressType)
+ActiveRecord::Type.register(:email_address, CheckEmailAddress::CheckEmailAddressType)
 ActiveRecord::Type.register(:canonical_email_address,
-                            EmailAddress::CanonicalEmailAddressType)
+                            CheckEmailAddress::CanonicalCheckEmailAddressType)
 ```
 
 Assume the Users table contains the columns "email" and "canonical_email".
@@ -288,7 +288,7 @@ class User < ApplicationRecord
   attribute :email, :email_address
   attribute :canonical_email, :canonical_email_address
 
-  validates_with EmailAddress::ActiveRecordValidator,
+  validates_with CheckEmailAddress::ActiveRecordValidator,
                  fields: %i(email canonical_email)
 
   def email=(email_address)
@@ -297,14 +297,14 @@ class User < ApplicationRecord
   end
 
   def self.find_by_email(email)
-    user   = self.find_by(email: EmailAddress.normal(email))
-    user ||= self.find_by(canonical_email: EmailAddress.canonical(email))
-    user ||= self.find_by(canonical_email: EmailAddress.redacted(email))
+    user   = self.find_by(email: CheckEmailAddress.normal(email))
+    user ||= self.find_by(canonical_email: CheckEmailAddress.canonical(email))
+    user ||= self.find_by(canonical_email: CheckEmailAddress.redacted(email))
     user
   end
 
   def redact!
-    self[:canonical_email] = EmailAddress.redact(self.canonical_email)
+    self[:canonical_email] = CheckEmailAddress.redact(self.canonical_email)
     self[:email]           = self[:canonical_email]
   end
 end
@@ -342,9 +342,9 @@ which syntax and network validations to perform.
 You can compare email addresses:
 
 ```ruby
-e1 = EmailAddress.new("Clark.Kent@Gmail.com")
-e2 = EmailAddress.new("clark.kent+Superman@Gmail.com")
-e3 = EmailAddress.new(e2.redact)
+e1 = CheckEmailAddress.new("Clark.Kent@Gmail.com")
+e2 = CheckEmailAddress.new("clark.kent+Superman@Gmail.com")
+e3 = CheckEmailAddress.new(e2.redact)
 e1.to_s           #=> "clark.kent@gmail.com"
 e2.to_s           #=> "clark.kent+superman@gmail.com"
 e3.to_s           #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
@@ -371,7 +371,7 @@ Matching addresses by simple patterns:
 Usage:
 
 ```ruby
-e = EmailAddress.new("Clark.Kent@Gmail.com")
+e = CheckEmailAddress.new("Clark.Kent@Gmail.com")
 e.matches?("gmail.com") #=> true
 e.matches?("google")    #=> true
 e.matches?(".org")      #=> false
@@ -387,28 +387,28 @@ control how the library treats that address. These can also be
 configured during initialization by provider and default (see below).
 
 ```ruby
-EmailAddress.new("clark.kent@gmail.com",
+CheckEmailAddress.new("clark.kent@gmail.com",
                  host_validation: :syntax, host_encoding: :unicode)
 ```
 
 Globally, you can change and query configuration options:
 
 ```ruby
-EmailAddress::Config.setting(:host_validation, :mx)
-EmailAddress::Config.setting(:host_validation) #=> :mx
+CheckEmailAddress::Config.setting(:host_validation, :mx)
+CheckEmailAddress::Config.setting(:host_validation) #=> :mx
 ```
 
 Or set multiple settings at once:
 
 ```ruby
-EmailAddress::Config.configure(local_downcase: false, host_validation: :syntax)
+CheckEmailAddress::Config.configure(local_downcase: false, host_validation: :syntax)
 ```
 
 You can add special rules by domain or provider. It takes the options
 above and adds the :domain_match and :exchanger_match rules.
 
 ```ruby
-EmailAddress.define_provider('google',
+CheckEmailAddress.define_provider('google',
   domain_match:      %w(gmail.com googlemail.com),
   exchanger_match:   %w(google.com), # Requires host_validation==:mx
   local_size:        5..64,
@@ -430,14 +430,14 @@ DNS. If you specify an exchanger pattern, but requires a DNS MX lookup.
 
 For Rails application, create an initializer file with your default
 configuration options.
-EmailAddress::Config.setting takes a single setting name and value,
-while EmailAddress::Config.configure takes a hash of multiple settings.
+CheckEmailAddress::Config.setting takes a single setting name and value,
+while CheckEmailAddress::Config.configure takes a hash of multiple settings.
 
 ```ruby
 # ./config/initializers/email_address.rb
-EmailAddress::Config.setting( :local_format, :relaxed )
-EmailAddress::Config.configure( local_format: :relaxed, ... )
-EmailAddress::Config.provider(:github,
+CheckEmailAddress::Config.setting( :local_format, :relaxed )
+CheckEmailAddress::Config.configure( local_format: :relaxed, ... )
+CheckEmailAddress::Config.provider(:github,
        host_match: %w(github.com), local_format: :standard)
 ```
 
@@ -446,7 +446,7 @@ EmailAddress::Config.provider(:github,
 You can override the default error messages as follows:
 
 ```ruby
-EmailAddress::Config.error_messages(
+CheckEmailAddress::Config.error_messages(
   invalid_address:    "Invalid Email Address",
   invalid_mailbox:    "Invalid Recipient/Mailbox",
   invalid_host:       "Invalid Host/Domain Name",

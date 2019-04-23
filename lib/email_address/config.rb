@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module EmailAddress
+module CheckEmailAddress
   # Global configurations and for default/unknown providers. Settings are:
   #
   # * dns_lookup:         :mx, :a, :off
