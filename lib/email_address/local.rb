@@ -82,12 +82,12 @@ module EmailAddress
     STANDARD_MAX_SIZE  = 64
 
     # Conventional : word([.-+'_]word)*
-    CONVENTIONAL_MAILBOX_REGEX  = /\A [\p{L}\p{N}]+ (?: [\.\-\+\'_] [\p{L}\p{N}]+ )* \z/x
-    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}]+ (?: [\.\-\+\'_] [\p{L}\p{N}]+ )*/x
+    CONVENTIONAL_MAILBOX_REGEX  = /\A [\p{L}\p{N}_]+ (?: [\.\-\+\'_] [\p{L}\p{N}_]+ )* \z/x
+    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [\.\-\+\'_] [\p{L}\p{N}_]+ )*/x
 
     # Relaxed: same characters, relaxed order
-    RELAXED_MAILBOX_WITHIN = /[\p{L}\p{N}]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}]+ )*/x
-    RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}]+ )* \z/x
+    RELAXED_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}_]+ )*/x
+    RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}_]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}_]+ )* \z/x
 
     # RFC5322 Token: token."token".token (dot-separated tokens)
     #   Quoted Token can also have: SPACE \" \\ ( ) , : ; < > @ [ \ ] .

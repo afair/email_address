@@ -42,7 +42,7 @@ class TestLocal < MiniTest::Test
     assert EmailAddress::Local.new("first..last", local_format: :relaxed).valid?, "relax.."
     assert EmailAddress::Local.new("first.-last", local_format: :relaxed).valid?, "relax.-"
     assert EmailAddress::Local.new("a", local_format: :relaxed).valid?, "relax single"
-    assert ! EmailAddress::Local.new("firstlast_", local_format: :relaxed).valid?, "last_"
+    assert EmailAddress::Local.new("firstlast_", local_format: :relaxed).valid?, "last_"
   end
 
   def test_unicode
@@ -97,6 +97,12 @@ class TestLocal < MiniTest::Test
     assert EmailAddress.valid?("x@exposure.co")
     assert EmailAddress.error("xxxx+subscriber@gmail.com")
     assert EmailAddress.valid?("xxxxx+subscriber@gmail.com")
+  end
+
+  def test_ending_underscore
+    assert EmailAddress.valid?("name_@icloud.com")
+    assert EmailAddress.valid?("username_@gmail.com")
+    assert EmailAddress.valid?("username_____@gmail.com")
   end
 
 end
