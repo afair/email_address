@@ -288,7 +288,7 @@ module EmailAddress
 
     # Does "example." match any tld?
     def registration_name_matches?(rule)
-      self.registration_name + '.' == rule ? true : false
+      "#{self.registration_name}." == rule ? true : false
     end
 
     # Does "sub.example.com" match ".com" and ".example.com" top level names?
@@ -305,8 +305,8 @@ module EmailAddress
     # Requires optionally starts with a "@".
     def domain_matches?(rule)
       rule = $1 if rule =~ /\A@(.+)/
-      return rule if File.fnmatch?(rule, self.domain_name)
-      return rule if File.fnmatch?(rule, self.dns_name)
+      return rule if File.fnmatch?(rule, self.domain_name) if self.domain_name
+      return rule if File.fnmatch?(rule, self.dns_name) if self.dns_name
       false
     end
 
@@ -315,12 +315,10 @@ module EmailAddress
     def ip_matches?(cidr)
       return false unless self.ip_address
       return cidr if !cidr.include?("/") && cidr == self.ip_address
-
-      c = NetAddr::CIDR.create(cidr)
       if cidr.include?(":") && self.ip_address.include?(":")
-        return cidr if c.matches?(self.ip_address)
+        return cidr if NetAddr::IPv6Net.parse(cidr).contains(NetAddr::IPv6.parse(self.ip_address))
       elsif cidr.include?(".") && self.ip_address.include?(".")
-        return cidr if c.matches?(self.ip_address)
+        return cidr if NetAddr::IPv4Net.parse(cidr).contains(NetAddr::IPv4.parse(self.ip_address))
       end
       false
     end
