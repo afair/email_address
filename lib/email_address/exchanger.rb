@@ -52,7 +52,14 @@ module EmailAddress
     def mxers
       return [["example.com", "0.0.0.0", 1]] if @config[:dns_lookup] == :off
       @mxers ||= Resolv::DNS.open do |dns|
-        ress = dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
+        dns.timeouts = @config[:dns_timeout] if @config[:dns_timeout]
+
+        ress = begin
+          dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
+        rescue Resolv::ResolvTimeout
+          []
+        end
+
         records = ress.map do |r|
           begin
             if r.exchange.to_s > " "

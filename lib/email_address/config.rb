@@ -9,6 +9,9 @@ module EmailAddress
   #   :a        - DNS A Record lookup (as some domains don't specify an MX incorrectly)
   #   :off      - Do not perform DNS lookup (Test mode, network unavailable)
   #
+  # * dns_timeout:        nil
+  #   False, or a timeout in seconds. Timeout on the DNS lookup, after which it will fail.
+  #
   # * sha1_secret         ""
   #   This application-level secret is appended to the email_address to compute
   #   the SHA1 Digest, making it unique to your application so it can't easily be
@@ -99,6 +102,7 @@ module EmailAddress
   class Config
     @config = {
       dns_lookup:         :mx,  # :mx, :a, :off
+      dns_timeout:        nil,
       sha1_secret:        "",
       munge_string:       "*****",
 
