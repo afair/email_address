@@ -32,5 +32,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "simplecov"
 
   spec.add_dependency "simpleidn"
-  spec.add_dependency "netaddr", "~> 2.0"
+  spec.add_dependency "netaddr", '>= 2.0.4', '< 3'
 end
