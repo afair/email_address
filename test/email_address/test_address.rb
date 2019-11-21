@@ -116,4 +116,8 @@ class TestAddress < Minitest::Test
     assert ! EmailAddress.new('a.c.m.e.-industries@foo.com').valid?
     assert true, EmailAddress.new('a.c.m.e.-industries@foo.com', local_format: :relaxed).valid?
   end
+
+  def test_nil_address
+    assert_nil EmailAddress.new(nil).normal, "Expected a nil input to make nil output"
+  end
 end

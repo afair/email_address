@@ -24,8 +24,8 @@ module EmailAddress
     # address. The original string is available in the #original method.
     def initialize(email_address, config={})
       @config        = config # This needs refactoring!
-      email_address  = (email_address || "").strip
       @original      = email_address
+      email_address  = (email_address || "").strip
       email_address  = parse_rewritten(email_address) unless config[:skip_rewrite]
       local, host    = EmailAddress::Address.split_local_host(email_address)
 
