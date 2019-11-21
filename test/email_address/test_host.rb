@@ -89,6 +89,20 @@ class TestHost < MiniTest::Test
     assert_equal 'yah*.jp', h.matches?("yah*.jp")
   end
 
+  def test_ipv4_matches
+    h = EmailAddress::Host.new("[123.123.123.8]", host_allow_ip:true)
+    assert_equal "123.123.123.8", h.ip_address
+    assert_equal false, h.matches?("127.0.0.0/8")
+    assert_equal '123.123.123.0/24', h.matches?("123.123.123.0/24")
+  end
+
+  def test_ipv6_matches
+    h = EmailAddress::Host.new("[IPV6:2001:db8::1]", host_allow_ip:true)
+    assert_equal "2001:db8::1", h.ip_address
+    assert_equal false, h.matches?("2002:db8::/118")
+    assert_equal '2001:db8::/118', h.matches?("2001:db8::/118")
+  end
+
   def test_regexen
     assert "asdf.com".match EmailAddress::Host::CANONICAL_HOST_REGEX
     assert "xn--5ca.com".match EmailAddress::Host::CANONICAL_HOST_REGEX
