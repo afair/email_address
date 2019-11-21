@@ -2,7 +2,7 @@ language: ruby
 rvm:
   - ruby-head
   - 2.3.7
-  - jruby-9.0.4.0
+  - jruby-9.2.9.0
   #- rbx
 
 addons:
