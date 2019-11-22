@@ -247,9 +247,6 @@ module EmailAddress
         return false unless self.local.valid?
         return false unless self.host.valid?
       end
-      if @config[:address_validation] == :smtp
-
-      end
       true
     end
 

@@ -16,5 +16,6 @@ en:
     ipv6_address_invalid: "This is not a valid IPv6 address"
     local_size_long: "Mailbox name too long"
     local_size_short: "Mailbox name too short"
+    local_invalid: "Recipient is not valid"
     not_allowed: "Address is not allowed"
     server_not_available: "The remote email server is not available"

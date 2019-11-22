@@ -120,4 +120,8 @@ class TestAddress < Minitest::Test
   def test_nil_address
     assert_nil EmailAddress.new(nil).normal, "Expected a nil input to make nil output"
   end
+
+  def test_nonstandard_tag
+    assert EmailAddress.valid?("asdfas+-@icloud.com")
+  end
 end

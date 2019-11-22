@@ -101,6 +101,11 @@ module EmailAddress
 
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
 
+    CONVENTIONAL_TAG_REGEX  = #  AZaz09_!'+-/=
+      %r/^([\w\!\'\+\-\/\=]+)$/i.freeze
+    RELAXED_TAG_REGEX  = #  AZaz09_!#$%&'*+-/=?^`{|}~
+      %r/^([\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+)$/i.freeze
+
     def initialize(local, config={}, host=nil)
       self.config   = config.empty? ? EmailAddress::Config.all_settings : config
       self.local    = local
@@ -328,7 +333,12 @@ module EmailAddress
     # True if the part matches the conventional format
     def conventional?
       self.syntax = :invalid
-      self.local =~ CONVENTIONAL_MAILBOX_REGEX or return false
+      if self.tag
+        return false unless self.mailbox =~ CONVENTIONAL_MAILBOX_REGEX &&
+          self.tag =~ CONVENTIONAL_TAG_REGEX
+      else
+        return false unless self.local =~ CONVENTIONAL_MAILBOX_REGEX
+      end
       self.valid_size? or return false
       self.valid_encoding? or return false
       self.syntax = :conventional
@@ -340,7 +350,10 @@ module EmailAddress
       self.syntax = :invalid
       self.valid_size? or return false
       self.valid_encoding? or return false
-      if self.local =~ RELAXED_MAILBOX_REGEX
+      if self.tag
+        return false unless self.mailbox =~ RELAXED_MAILBOX_REGEX &&
+          self.tag =~ RELAXED_TAG_REGEX
+      elsif self.local =~ RELAXED_MAILBOX_REGEX
         self.syntax = :relaxed
         true
       else
@@ -384,7 +397,7 @@ module EmailAddress
     end
 
     def error
-      self.valid? ? nil : @error
+      self.valid? ? nil : ( @error || :local_invalid)
     end
 
   end
