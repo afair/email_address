@@ -12,19 +12,22 @@ module EmailAddress
       @host_cache ||= {}
       @cache_size ||= ENV['EMAIL_ADDRESS_CACHE_SIZE'].to_i || 100
       if @host_cache.has_key?(host)
-        o = @host_cache.delete(host)
-        @host_cache[host] = o # LRU cache, move to end
-      elsif @host_cache.size >= @cache_size
-        @host_cache.delete(@host_cache.keys.first)
-        @host_cache[host] = new(host, config)
+        exchanger = @host_cache.delete(host)
+        exchanger = new(host, config) if exchanger.network_was_down?
+        @host_cache[host] = exchanger # LRU cache, move to end
       else
-        @host_cache[host] = new(host, config)
+        if @host_cache.size >= @cache_size
+          @host_cache.delete(@host_cache.keys.first)
+        end
+        exchanger = @host_cache[host] = new(host, config)
       end
+      exchanger
     end
 
     def initialize(host, config={})
       @host = host
       @config = config
+      @network_down_at = nil
     end
 
     def each(&block)
@@ -44,13 +47,40 @@ module EmailAddress
       @provider = :default
     end
 
+    # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
+    def a_record
+      @_a_record = [@host, [], 2, ""] if @config[:dns_lookup] == :off
+      @_a_record ||= Socket.gethostbyname(@host)
+    rescue SocketError # not found, but could also mean network not work
+      if network_down?
+        @_a_record = [@host, [], 2, ""]
+      else
+        @_a_record ||= []
+      end
+    end
+
+    def network_down?
+      return false if @config[:dns_lookup] == :off
+
+      Socket.gethostbyname('example.com') # Should always exist
+      @network_down_at = nil
+      false
+    rescue SocketError # DNS Failed, so network is down
+      @network_down_at = Time.new
+      true
+    end
+
+    def network_was_down?
+      @network_down_at ? true : false
+    end
+
     # Returns: [["mta7.am0.yahoodns.net", "66.94.237.139", 1], ["mta5.am0.yahoodns.net", "67.195.168.230", 1], ["mta6.am0.yahoodns.net", "98.139.54.60", 1]]
     # If not found, returns []
     # Returns a dummy record when dns_lookup is turned off since it may exists, though
     # may not find provider by MX name or IP. I'm not sure about the "0.0.0.0" ip, it should
     # be good in this context, but in "listen" context it means "all bound IP's"
     def mxers
-      return [["example.com", "0.0.0.0", 1]] if @config[:dns_lookup] == :off
+      return [[@host, "0.0.0.0", 1]] if @config[:dns_lookup] == :off
       @mxers ||= Resolv::DNS.open do |dns|
         dns.timeouts = @config[:dns_timeout] if @config[:dns_timeout]
 
@@ -59,6 +89,7 @@ module EmailAddress
         rescue Resolv::ResolvTimeout
           []
         end
+        return [[@host, "0.0.0.0", 1]] if ress.empty? && network_down?
 
         records = ress.map do |r|
           begin
@@ -67,8 +98,12 @@ module EmailAddress
             else
               nil
             end
-          rescue SocketError # not found, but could also mean network not work or it could mean one record doesn't resolve an address
-            nil
+          rescue SocketError
+            if network_down?
+              [@host, "0.0.0.0", 1]
+            else # Not Found
+              nil
+            end
           end
         end
         records.compact
