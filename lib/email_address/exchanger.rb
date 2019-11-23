@@ -61,6 +61,7 @@ module EmailAddress
 
     def network_down?
       return false if @config[:dns_lookup] == :off
+      return false if @config[:dns_unavailable] == :ignore
 
       Socket.gethostbyname('example.com') # Should always exist
       @network_down_at = nil
