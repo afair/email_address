@@ -1,6 +1,6 @@
 language: ruby
 rvm:
-  - ruby-head
+  - 2.7.0
   - 2.3.7
   - jruby-9.2.9.0
   #- rbx
