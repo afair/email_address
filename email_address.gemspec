@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
     spec.add_development_dependency "activerecord", "=  4.2.10"
     spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", '~> 1.3.24'
   else
-    spec.add_development_dependency "activerecord", "~> 5.2.0"
+    spec.add_development_dependency "activerecord", "~> 5.2.4"
     spec.add_development_dependency "sqlite3"
   end
   #spec.add_development_dependency "codeclimate-test-reporter"
