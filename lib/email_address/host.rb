@@ -332,12 +332,11 @@ module EmailAddress
       [:mx, :a].include?(EmailAddress::Config.setting(:host_validation))
     end
 
-    # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
+    # Returns: [official_hostname, [alias'], address_family, *address_list]
     def dns_a_record
-      @_dns_a_record = "0.0.0.0" if @config[:dns_lookup] == :off
-      @_dns_a_record ||= Socket.gethostbyname(self.dns_name)
-    rescue SocketError # not found, but could also mean network not work
-      @_dns_a_record ||= []
+      return [self.dns_name, [], 2, ""] if @config[:dns_lookup] == :off
+
+      @_dns_a_record = exchangers.a_record
     end
 
     # Returns an array of EmailAddress::Exchanger hosts configured in DNS.
