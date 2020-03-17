@@ -1,6 +1,4 @@
-# encoding: UTF-8
-require_relative '../test_helper'
-
+require_relative "../test_helper"
 
 class TestHost < MiniTest::Test
   def test_host
@@ -10,16 +8,16 @@ class TestHost < MiniTest::Test
     assert_equal "example", a.registration_name
     assert_equal "com", a.tld
     assert_equal "ex*****", a.munge
-    assert_nil   a.subdomains
+    assert_nil a.subdomains
   end
 
   def test_dns_enabled
     a = EmailAddress::Host.new("example.com")
     assert_instance_of TrueClass, a.dns_enabled?
-    old_setting = EmailAddress::Config.setting(:host_validation)
-    EmailAddress::Config.configure(host_validation: :off)
+    a = EmailAddress::Host.new("example.com", host_validation: :syntax)
     assert_instance_of FalseClass, a.dns_enabled?
-    EmailAddress::Config.configure(host_validation: old_setting)
+    a = EmailAddress::Host.new("example.com", dns_lookup: :off)
+    assert_instance_of FalseClass, a.dns_enabled?
   end
 
   def test_foreign_host
@@ -53,54 +51,54 @@ class TestHost < MiniTest::Test
 
   def test_dmarc
     d = EmailAddress::Host.new("yahoo.com").dmarc
-    assert_equal 'reject', d[:p]
+    assert_equal "reject", d[:p]
     d = EmailAddress::Host.new("example.com").dmarc
     assert_equal true, d.empty?
   end
 
   def test_ipv4
-    h = EmailAddress::Host.new("[127.0.0.1]", host_allow_ip:true, host_local:true)
+    h = EmailAddress::Host.new("[127.0.0.1]", host_allow_ip: true, host_local: true)
     assert_equal "127.0.0.1", h.ip_address
     assert_equal true, h.valid?
   end
 
   def test_ipv6
-    h = EmailAddress::Host.new("[IPv6:::1]", host_allow_ip:true, host_local:true)
+    h = EmailAddress::Host.new("[IPv6:::1]", host_allow_ip: true, host_local: true)
     assert_equal "::1", h.ip_address
     assert_equal true, h.valid?
   end
 
   def test_comment
     h = EmailAddress::Host.new("(oops)gmail.com")
-    assert_equal 'gmail.com', h.to_s
-    assert_equal 'oops', h.comment
+    assert_equal "gmail.com", h.to_s
+    assert_equal "oops", h.comment
     h = EmailAddress::Host.new("gmail.com(oops)")
-    assert_equal 'gmail.com', h.to_s
-    assert_equal 'oops', h.comment
+    assert_equal "gmail.com", h.to_s
+    assert_equal "oops", h.comment
   end
 
   def test_matches
     h = EmailAddress::Host.new("yahoo.co.jp")
     assert_equal false, h.matches?("gmail.com")
-    assert_equal 'yahoo.co.jp', h.matches?("yahoo.co.jp")
-    assert_equal '.co.jp', h.matches?(".co.jp")
-    assert_equal '.jp', h.matches?(".jp")
-    assert_equal 'yahoo.', h.matches?("yahoo.")
-    assert_equal 'yah*.jp', h.matches?("yah*.jp")
+    assert_equal "yahoo.co.jp", h.matches?("yahoo.co.jp")
+    assert_equal ".co.jp", h.matches?(".co.jp")
+    assert_equal ".jp", h.matches?(".jp")
+    assert_equal "yahoo.", h.matches?("yahoo.")
+    assert_equal "yah*.jp", h.matches?("yah*.jp")
   end
 
   def test_ipv4_matches
-    h = EmailAddress::Host.new("[123.123.123.8]", host_allow_ip:true)
+    h = EmailAddress::Host.new("[123.123.123.8]", host_allow_ip: true)
     assert_equal "123.123.123.8", h.ip_address
     assert_equal false, h.matches?("127.0.0.0/8")
-    assert_equal '123.123.123.0/24', h.matches?("123.123.123.0/24")
+    assert_equal "123.123.123.0/24", h.matches?("123.123.123.0/24")
   end
 
   def test_ipv6_matches
-    h = EmailAddress::Host.new("[IPV6:2001:db8::1]", host_allow_ip:true)
+    h = EmailAddress::Host.new("[IPV6:2001:db8::1]", host_allow_ip: true)
     assert_equal "2001:db8::1", h.ip_address
     assert_equal false, h.matches?("2002:db8::/118")
-    assert_equal '2001:db8::/118', h.matches?("2001:db8::/118")
+    assert_equal "2001:db8::/118", h.matches?("2001:db8::/118")
   end
 
   def test_regexen
@@ -112,18 +110,18 @@ class TestHost < MiniTest::Test
   end
 
   def test_hosted_service
-    assert EmailAddress.valid?('test@jiff.com', dns_lookup: :mx)
-    assert ! EmailAddress.valid?('test@gmail.com', dns_lookup: :mx)
+    assert EmailAddress.valid?("test@jiff.com", dns_lookup: :mx)
+    assert !EmailAddress.valid?("test@gmail.com", dns_lookup: :mx)
   end
 
   def test_yahoo_bad_tld
-    assert ! EmailAddress.valid?('test@yahoo.badtld')
-    assert ! EmailAddress.valid?('test@yahoo.wtf') # Registered, but MX IP = 0.0.0.0
+    assert !EmailAddress.valid?("test@yahoo.badtld")
+    assert !EmailAddress.valid?("test@yahoo.wtf") # Registered, but MX IP = 0.0.0.0
   end
 
   def test_bad_formats
-    assert ! EmailAddress::Host.new('ya  hoo.com').valid?
-    assert EmailAddress::Host.new('ya  hoo.com', host_remove_spaces:true).valid?
+    assert !EmailAddress::Host.new("ya  hoo.com").valid?
+    assert EmailAddress::Host.new("ya  hoo.com", host_remove_spaces: true).valid?
   end
 
   def test_errors
@@ -133,7 +131,7 @@ class TestHost < MiniTest::Test
     assert_nil EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", host_validation: :syntax).error
     assert_equal EmailAddress::Host.new("ya  hoo.com", host_validation: :syntax).error, "Invalid Domain Name"
     assert_equal EmailAddress::Host.new("[127.0.0.1]").error, "IP Addresses are not allowed"
-    assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip:true).error, "This is not a valid IPv4 address"
-    assert_equal EmailAddress::Host.new("[IPv6::12t]", host_allow_ip:true).error, "This is not a valid IPv6 address"
+    assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip: true).error, "This is not a valid IPv4 address"
+    assert_equal EmailAddress::Host.new("[IPv6::12t]", host_allow_ip: true).error, "This is not a valid IPv6 address"
   end
 end

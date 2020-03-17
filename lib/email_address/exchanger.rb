@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require 'resolv'
-require 'netaddr'
-require 'socket'
+require "resolv"
+require "netaddr"
+require "socket"
 
 module EmailAddress
   class Exchanger
     include Enumerable
 
-    def self.cached(host, config={})
+    def self.cached(host, config = {})
       @host_cache ||= {}
-      @cache_size ||= ENV['EMAIL_ADDRESS_CACHE_SIZE'].to_i || 100
+      @cache_size ||= ENV["EMAIL_ADDRESS_CACHE_SIZE"].to_i || 100
       if @host_cache.has_key?(host)
         o = @host_cache.delete(host)
         @host_cache[host] = o # LRU cache, move to end
@@ -22,14 +22,16 @@ module EmailAddress
       end
     end
 
-    def initialize(host, config={})
+    def initialize(host, config = {})
       @host = host
       @config = config
+      @dns_disabled = @config[:host_validation] == :syntax || @config[:dns_lookup] == :off
     end
 
     def each(&block)
+      return if @dns_disabled
       mxers.each do |m|
-        yield({host:m[0], ip:m[1], priority:m[2]})
+        yield({host: m[0], ip: m[1], priority: m[2]})
       end
     end
 
@@ -37,7 +39,7 @@ module EmailAddress
     def provider
       return @provider if defined? @provider
       EmailAddress::Config.providers.each do |provider, config|
-        if config[:exchanger_match] && self.matches?(config[:exchanger_match])
+        if config[:exchanger_match] && matches?(config[:exchanger_match])
           return @provider = provider
         end
       end
@@ -50,40 +52,37 @@ module EmailAddress
     # may not find provider by MX name or IP. I'm not sure about the "0.0.0.0" ip, it should
     # be good in this context, but in "listen" context it means "all bound IP's"
     def mxers
-      return [["example.com", "0.0.0.0", 1]] if @config[:dns_lookup] == :off
-      @mxers ||= Resolv::DNS.open do |dns|
+      return [["example.com", "0.0.0.0", 1]] if @dns_disabled
+      @mxers ||= Resolv::DNS.open { |dns|
         dns.timeouts = @config[:dns_timeout] if @config[:dns_timeout]
 
         ress = begin
           dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
-        rescue Resolv::ResolvTimeout
-          []
+               rescue Resolv::ResolvTimeout
+                 []
         end
 
-        records = ress.map do |r|
-          begin
-            if r.exchange.to_s > " "
-              [r.exchange.to_s, IPSocket::getaddress(r.exchange.to_s), r.preference]
-            else
-              nil
-            end
-          rescue SocketError # not found, but could also mean network not work or it could mean one record doesn't resolve an address
-            nil
+        records = ress.map { |r|
+          if r.exchange.to_s > " "
+            [r.exchange.to_s, IPSocket.getaddress(r.exchange.to_s), r.preference]
           end
-        end
+        }
         records.compact
-      end
+      }
+    # not found, but could also mean network not work or it could mean one record doesn't resolve an address
+    rescue SocketError
+      [["example.com", "0.0.0.0", 1]]
     end
 
     # Returns Array of domain names for the MX'ers, used to determine the Provider
     def domains
-      @_domains ||= mxers.map {|m| EmailAddress::Host.new(m.first).domain_name }.sort.uniq
+      @_domains ||= mxers.map { |m| EmailAddress::Host.new(m.first).domain_name }.sort.uniq
     end
 
     # Returns an array of MX IP address (String) for the given email domain
     def mx_ips
-      return ["0.0.0.0"] if @config[:dns_lookup] == :off
-      mxers.map {|m| m[1] }
+      return ["0.0.0.0"] if @dns_disabled
+      mxers.map { |m| m[1] }
     end
 
     # Simple matcher, takes an array of CIDR addresses (ip/bits) and strings.
@@ -96,9 +95,9 @@ module EmailAddress
       rules = Array(rules)
       rules.each do |rule|
         if rule.include?("/")
-          return rule if self.in_cidr?(rule)
+          return rule if in_cidr?(rule)
         else
-          self.each {|mx| return rule if mx[:host].end_with?(rule) }
+          each { |mx| return rule if mx[:host].end_with?(rule) }
         end
       end
       false
