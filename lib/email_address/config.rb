@@ -97,67 +97,66 @@ module EmailAddress
   # * exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
   #
 
-  require 'yaml'
+  require "yaml"
 
   class Config
     @config = {
-      dns_lookup:         :mx,  # :mx, :a, :off
-      dns_timeout:        nil,
-      sha1_secret:        "",
-      munge_string:       "*****",
+      dns_lookup: :mx, # :mx, :a, :off
+      dns_timeout: nil,
+      sha1_secret: "",
+      munge_string: "*****",
 
-      local_downcase:     true,
-      local_fix:          false,
-      local_encoding:     :ascii, # :ascii, :unicode,
-      local_parse:        nil,   # nil, Proc
-      local_format:       :conventional, # :conventional, :relaxed, :redacted, :standard, Proc
-      local_size:         1..64,
-      tag_separator:      '+', # nil, character
-      mailbox_size:       1..64, # without tag
-      mailbox_canonical:  nil, # nil,  Proc
-      mailbox_validator:  nil, # nil,  Proc
+      local_downcase: true,
+      local_fix: false,
+      local_encoding: :ascii, # :ascii, :unicode,
+      local_parse: nil, # nil, Proc
+      local_format: :conventional, # :conventional, :relaxed, :redacted, :standard, Proc
+      local_size: 1..64,
+      tag_separator: "+", # nil, character
+      mailbox_size: 1..64, # without tag
+      mailbox_canonical: nil, # nil,  Proc
+      mailbox_validator: nil, # nil,  Proc
 
-      host_encoding:      :punycode || :unicode,
-      host_validation:    :mx || :a || :connect || :syntax,
-      host_size:          1..253,
-      host_allow_ip:      false,
+      host_encoding: :punycode || :unicode,
+      host_validation: :mx || :a || :connect || :syntax,
+      host_size: 1..253,
+      host_allow_ip: false,
       host_remove_spaces: false,
-      host_local:         false,
+      host_local: false,
 
       address_validation: :parts, # :parts, :smtp, Proc
-      address_size:       3..254,
-      address_fqdn_domain: nil, # Fully Qualified Domain Name = [host].[domain.tld]
+      address_size: 3..254,
+      address_fqdn_domain: nil # Fully Qualified Domain Name = [host].[domain.tld]
     }
 
     # 2018-04: AOL and Yahoo now under "oath.com", owned by Verizon. Keeping separate for now
     @providers = {
       aol: {
-        host_match:       %w(aol. compuserve. netscape. aim. cs.),
+        host_match: %w[aol. compuserve. netscape. aim. cs.]
       },
       google: {
-        host_match:       %w(gmail.com googlemail.com),
-        exchanger_match:  %w(google.com googlemail.com),
-        local_size:       5..64,
+        host_match: %w[gmail.com googlemail.com],
+        exchanger_match: %w[google.com googlemail.com],
+        local_size: 5..64,
         local_private_size: 1..64, # When hostname not in host_match (private label)
-        mailbox_canonical: ->(m) {m.gsub('.','')},
+        mailbox_canonical: ->(m) { m.delete(".") }
       },
       msn: {
-        host_match:       %w(msn. hotmail. outlook. live.),
-        mailbox_validator: ->(m,t) { m =~ /\A\w[\-\w]*(?:\.[\-\w]+)*\z/i},
+        host_match: %w[msn. hotmail. outlook. live.],
+        mailbox_validator: ->(m, t) { m =~ /\A\w[\-\w]*(?:\.[\-\w]+)*\z/i }
       },
       yahoo: {
-        host_match:       %w(yahoo. ymail. rocketmail.),
-        exchanger_match:  %w(yahoodns yahoo-inc),
-      },
+        host_match: %w[yahoo. ymail. rocketmail.],
+        exchanger_match: %w[yahoodns yahoo-inc]
+      }
     }
-
 
     # Loads messages: {"en"=>{"email_address"=>{"invalid_address"=>"Invalid Email Address",...}}}
     # Rails/I18n gem: t(email_address.error, scope: "email_address")
-    @errors = YAML.load_file(File.dirname(__FILE__)+"/messages.yaml")
+    @errors = YAML.load_file(File.dirname(__FILE__) + "/messages.yaml")
 
     # Set multiple default configuration settings
-    def self.configure(config={})
+    def self.configure(config = {})
       @config.merge!(config)
     end
 
@@ -168,12 +167,12 @@ module EmailAddress
     end
 
     # Returns the hash of Provider rules
-    def self.providers
-      @providers
+    class << self
+      attr_reader :providers
     end
 
     # Configure or lookup a provider by name.
-    def self.provider(name, config={})
+    def self.provider(name, config = {})
       name = name.to_sym
       if config.size > 0
         @providers[name] ||= @config.clone
@@ -182,19 +181,22 @@ module EmailAddress
       @providers[name]
     end
 
-    def self.error_message(name, locale="en")
+    def self.error_message(name, locale = "en")
       @errors[locale]["email_address"][name.to_s] || name.to_s
     end
 
     # Customize your own error message text.
-    def self.error_messages(hash=nil)
-      @errors = @errors.merge(hash) if hash
-      @errors
+    def self.error_messages(hash = {}, locale = "en", *extra)
+      hash = extra.first if extra.first.is_a? Hash
+      unless hash.empty?
+        @errors[locale]["email_address"] = @errors[locale]["email_address"].merge(hash)
+      end
+      @errors[locale]["email_address"]
     end
 
     def self.all_settings(*configs)
       config = @config.clone
-      configs.each {|c| config.merge!(c) }
+      configs.each { |c| config.merge!(c) }
       config
     end
   end

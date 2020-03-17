@@ -446,14 +446,16 @@ EmailAddress::Config.provider(:github,
 You can override the default error messages as follows:
 
 ```ruby
-EmailAddress::Config.error_messages(
+EmailAddress::Config.error_messages({
   invalid_address:    "Invalid Email Address",
   invalid_mailbox:    "Invalid Recipient/Mailbox",
   invalid_host:       "Invalid Host/Domain Name",
   exceeds_size:       "Address too long",
   not_allowed:        "Address is not allowed",
-  incomplete_domain:  "Domain name is incomplete")
+  incomplete_domain:  "Domain name is incomplete"}, 'en')
 ```
+Note: Release 0.1.14 fixed setting error messages by locale.
+Also, it will accept a ruby "collected" hash as before,
 
 Full translation support would be ideal though.
 
