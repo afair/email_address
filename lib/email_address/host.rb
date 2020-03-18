@@ -235,7 +235,7 @@ module EmailAddress
     def parts
       {host_name: host_name, dns_name: dns_name, subdomain: subdomains,
        registration_name: registration_name, domain_name: domain_name,
-       tld2: tld2, tld: tld, ip_address: ip_address}
+       tld2: tld2, tld: tld, ip_address: ip_address,}
     end
 
     ############################################################################
@@ -286,7 +286,7 @@ module EmailAddress
 
     # Does "example." match any tld?
     def registration_name_matches?(rule)
-      "#{registration_name}." == rule
+      rule == "#{registration_name}."
     end
 
     # Does "sub.example.com" match ".com" and ".example.com" top level names?
@@ -450,9 +450,9 @@ module EmailAddress
       if !@config[:host_allow_ip]
         bool = set_error(:ip_address_forbidden)
       elsif ip_address.include?(":")
-        bool = Resolv::IPv6::Regex.match?(ip_address) ? true : set_error(:ipv6_address_invalid)
+        bool = ip_address.match?(Resolv::IPv6::Regex) ? true : set_error(:ipv6_address_invalid)
       elsif ip_address.include?(".")
-        bool = Resolv::IPv4::Regex.match?(ip_address) ? true : set_error(:ipv4_address_invalid)
+        bool = ip_address.match?(Resolv::IPv4::Regex) ? true : set_error(:ipv4_address_invalid)
       end
       if bool && (localhost? && !@config[:host_local])
         bool = set_error(:ip_address_no_localhost)

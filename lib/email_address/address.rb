@@ -215,7 +215,7 @@ module EmailAddress
 
       # Does "root@*.com" match "root@example.com" domain name
       rules.each do |r|
-        if /.+@.+/.match?(r)
+        if r.match?(/.+@.+/)
           return r if File.fnmatch?(r, to_s)
         end
       end
