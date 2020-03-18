@@ -450,9 +450,9 @@ module EmailAddress
       if !@config[:host_allow_ip]
         bool = set_error(:ip_address_forbidden)
       elsif ip_address.include?(":")
-        bool = ip_address.match?(Resolv::IPv6::Regex) ? true : set_error(:ipv6_address_invalid)
+        bool = ip_address.match(Resolv::IPv6::Regex) ? true : set_error(:ipv6_address_invalid)
       elsif ip_address.include?(".")
-        bool = ip_address.match?(Resolv::IPv4::Regex) ? true : set_error(:ipv4_address_invalid)
+        bool = ip_address.match(Resolv::IPv4::Regex) ? true : set_error(:ipv4_address_invalid)
       end
       if bool && (localhost? && !@config[:host_local])
         bool = set_error(:ip_address_no_localhost)
