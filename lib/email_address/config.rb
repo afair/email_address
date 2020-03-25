@@ -175,8 +175,7 @@ module EmailAddress
     def self.provider(name, config = {})
       name = name.to_sym
       if config.size > 0
-        @providers[name] ||= @config.clone
-        @providers[name].merge!(config)
+        @providers[name.to_sym] = config
       end
       @providers[name]
     end
@@ -198,6 +197,26 @@ module EmailAddress
       config = @config.clone
       configs.each { |c| config.merge!(c) }
       config
+    end
+
+    def initialize(overrides = {})
+      @config = EmailAddress::Config.all_settings(overrides)
+    end
+
+    def []=(setting, value)
+      @config[setting.to_sym] = value
+    end
+
+    def [](setting)
+      @config[setting.to_sym]
+    end
+
+    def configure(settings)
+      @config = @config.merge(settings)
+    end
+
+    def to_h
+      @config
     end
   end
 end

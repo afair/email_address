@@ -24,7 +24,7 @@ module EmailAddress
 
     def initialize(host, config = {})
       @host = host
-      @config = config
+      @config = config.is_a?(Hash) ? EmailAddress::Config.new(config) : config
       @dns_disabled = @config[:host_validation] == :syntax || @config[:dns_lookup] == :off
     end
 

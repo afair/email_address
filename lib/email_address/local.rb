@@ -107,7 +107,7 @@ module EmailAddress
       %r/^([\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+)$/i.freeze
 
     def initialize(local, config={}, host=nil)
-      self.config   = config.empty? ? EmailAddress::Config.all_settings : config
+      @config = config.is_a?(Hash) ? EmailAddress::Config.new(config) : config
       self.local    = local
       @host         = host
       @error        = @error_message = nil
@@ -130,10 +130,10 @@ module EmailAddress
     def parse(raw)
       if raw =~ /\A\"(.*)\"\z/ # Quoted
         raw = $1
-        raw.gsub!(/\\(.)/, '\1') # Unescape
+        raw = raw.gsub(/\\(.)/, '\1') # Unescape
       elsif @config[:local_fix] && @config[:local_format] != :standard
-        raw.gsub!(' ','')
-        raw.gsub!(',','.')
+        raw = raw.gsub(' ','')
+        raw = raw.gsub(',','.')
         #raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
       end
       raw, comment = self.parse_comment(raw)
@@ -226,7 +226,7 @@ module EmailAddress
     def relax
       form = self.mailbox
       form += @config[:tag_separator] + self.tag if self.tag
-      form.gsub!(/[ \"\(\),:<>@\[\]\\]/,'')
+      form = form.gsub(/[ \"\(\),:<>@\[\]\\]/,'')
       form
     end
 
@@ -235,7 +235,7 @@ module EmailAddress
       form = self.mailbox
       form += @config[:tag_separator] + self.tag if self.tag
       form += "(" + self.comment + ")" if self.comment
-      form.gsub!(/([\\\"])/, '\\\1') # Escape \ and "
+      form = form.gsub(/([\\\"])/, '\\\1') # Escape \ and "
       if form =~ /[ \"\(\),:<>@\[\\\]]/ # Space and "(),:;<>@[\]
         form = %Q("#{form}")
       end

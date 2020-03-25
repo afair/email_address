@@ -87,7 +87,7 @@ module EmailAddress
     def initialize(host_name, config = {})
       @original = host_name ||= ""
       config[:host_type] ||= :email
-      @config = config
+      @config = config.is_a?(Hash) ? EmailAddress::Config.new(config) : config
       @error = @error_message = nil
       parse(host_name)
     end
@@ -227,8 +227,8 @@ module EmailAddress
     end
 
     def set_provider(name, provider_config = {}) # :nodoc:
-      self.config = EmailAddress::Config.all_settings(provider_config, @config)
-      self.provider = name
+      config.configure(provider_config)
+      @provider = name
     end
 
     # Returns a hash of the parts of the host name after parsing.
