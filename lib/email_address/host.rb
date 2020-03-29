@@ -149,7 +149,7 @@ module EmailAddress
       if @config[:host_remove_spaces]
         @host_name = @host_name.delete(" ")
       end
-      @dns_name = if /[^[:ascii:]]/.match?(host_name)
+      @dns_name = if /[^[:ascii:]]/.match(host_name)
         ::SimpleIDN.to_ascii(host_name)
       else
         host_name
