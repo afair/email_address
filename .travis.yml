@@ -1,9 +1,8 @@
 language: ruby
 rvm:
   - 2.7.0
-  - 2.3.7
+  - 2.3.0
   - jruby-9.2.9.0
-  #- rbx
 
 addons:
   code_climate:
