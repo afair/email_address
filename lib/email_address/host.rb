@@ -217,12 +217,6 @@ module EmailAddress
 
       return set_provider(:default) unless dns_enabled?
 
-      provider = exchangers.provider
-      if provider != :default
-        set_provider(provider,
-          EmailAddress::Config.provider(provider))
-      end
-
       self.provider ||= set_provider(:default)
     end
 
@@ -236,6 +230,10 @@ module EmailAddress
       {host_name: host_name, dns_name: dns_name, subdomain: subdomains,
        registration_name: registration_name, domain_name: domain_name,
        tld2: tld2, tld: tld, ip_address: ip_address,}
+    end
+
+    def hosted_provider
+      EmailAddress::Exchanger.cached(dns_name).provider
     end
 
     ############################################################################

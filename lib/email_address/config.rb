@@ -143,6 +143,7 @@ module EmailAddress
       },
       msn: {
         host_match: %w[msn. hotmail. outlook. live.],
+        exchanger_match: %w[outlook.com],
         mailbox_validator: ->(m, t) { m =~ /\A\w[\-\w]*(?:\.[\-\w]+)*\z/i }
       },
       yahoo: {

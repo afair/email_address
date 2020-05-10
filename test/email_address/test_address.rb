@@ -37,6 +37,11 @@ class TestAddress < Minitest::Test
     assert_equal "6bdd00c53645790ad9bbcb50caa93880",  EmailAddress.reference("Gmail.User+tag@gmail.com")
   end
 
+  def test_google_hosted
+    a = EmailAddress.new("Ex.am.ple+tag@boomer.com")
+    assert_equal a.canonical, "ex.am.ple@boomer.com"
+  end
+
   # COMPARISON & MATCHING
   def test_compare
     a = ("User+tag@example.com")

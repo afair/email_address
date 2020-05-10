@@ -50,7 +50,7 @@ It does not check:
 By default, MX records are required in DNS. MX or "mail exchanger" records
 tell where to deliver email for the domain. Many domains run their
 website on one provider (ISP, Heroku, etc.), and email on a different
-provider (such as Google Apps).  Note that `example.com`, while
+provider (such as G Suite).  Note that `example.com`, while
 a valid domain name, does not have MX records.
 
 ```ruby
@@ -248,6 +248,16 @@ EmailAddress.normal("HIRO@こんにちは世界.com")
 EmailAddress.normal("hiro@xn--28j2a3ar1pp75ovm7c.com", host_encoding: :unicode)
                     #=> "hiro@こんにちは世界.com"
 ```
+As of release 0.1.17, exchanger_match is no longer used for host provider
+determination, which designated the set of rules for that domain.
+Sometimes, as in Google-hosted domains, the address
+rules are different, notably the optional dots in mailboxes for gmail.com
+accounts do not apply to other private domains hosted at google.
+
+To access the provider service, you can now call:
+
+    EmailAddress.new("user@hosteddomain.com").host.hosted_provider
+
 
 #### Rails Validator
 
