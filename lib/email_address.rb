@@ -40,31 +40,30 @@ module EmailAddress
   #   secret to use in options[:secret]
   class << self
     (%i[valid? error normal redact munge canonical reference base srs] &
-     EmailAddress::Address.public_instance_methods
+     Address.public_instance_methods
     ).each do |proxy_method|
       define_method(proxy_method) do |*args, &block|
-        EmailAddress::Address.new(*args).public_send(proxy_method, &block)
+        Address.new(*args).public_send(proxy_method, &block)
       end
     end
-  end
 
+    # Creates an instance of this email address.
+    # This is a short-cut to EmailAddress::Address.new
+    def new(email_address, config={})
+      Address.new(email_address, config)
+    end
 
-  # Creates an instance of this email address.
-  # This is a short-cut to Email::Address::Address.new
-  def self.new(email_address, config={})
-    EmailAddress::Address.new(email_address, config)
-  end
+    def new_redacted(email_address, config={})
+      Address.new(Address.new(email_address, config).redact)
+    end
 
-  def self.new_redacted(email_address, config={})
-    EmailAddress::Address.new(EmailAddress::Address.new(email_address, config).redact)
-  end
+    def new_canonical(email_address, config={})
+      Address.new(Address.new(email_address, config).canonical, config)
+    end
 
-  def self.new_canonical(email_address, config={})
-    EmailAddress::Address.new(EmailAddress::Address.new(email_address, config).canonical, config)
-  end
-
-  # Does the email address match any of the given rules
-  def self.matches?(email_address, rules, config={})
-    EmailAddress::Address.new(email_address, config).matches?(rules)
+    # Does the email address match any of the given rules
+    def matches?(email_address, rules, config={})
+      Address.new(email_address, config).matches?(rules)
+    end
   end
 end

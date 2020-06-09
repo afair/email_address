@@ -24,7 +24,7 @@ module EmailAddress
 
     def initialize(host, config = {})
       @host = host
-      @config = config.is_a?(Hash) ? EmailAddress::Config.new(config) : config
+      @config = config.is_a?(Hash) ? Config.new(config) : config
       @dns_disabled = @config[:host_validation] == :syntax || @config[:dns_lookup] == :off
     end
 
@@ -38,7 +38,7 @@ module EmailAddress
     # Returns the provider name based on the MX-er host names, or nil if not matched
     def provider
       return @provider if defined? @provider
-      EmailAddress::Config.providers.each do |provider, config|
+      Config.providers.each do |provider, config|
         if config[:exchanger_match] && matches?(config[:exchanger_match])
           return @provider = provider
         end
@@ -76,7 +76,7 @@ module EmailAddress
 
     # Returns Array of domain names for the MX'ers, used to determine the Provider
     def domains
-      @_domains ||= mxers.map { |m| EmailAddress::Host.new(m.first).domain_name }.sort.uniq
+      @_domains ||= mxers.map { |m| Host.new(m.first).domain_name }.sort.uniq
     end
 
     # Returns an array of MX IP address (String) for the given email domain
