@@ -554,13 +554,28 @@ The value is an array of match tokens.
 
 ### Namespace conflict resolution
 
-If you encounter a collision with the `EmailAddress` namespace,
+If your application already uses the `EmailAddress` class name,
 it's possible to create an alias prior to loading your code:
+
+For a Rails application, you can do this in `config/application.rb`
+after the `Bundler.require` line, usually:
+
+```ruby
+Bundler.require(*Rails.groups)
+```
+
+Add these lines immediately after that point:
 
 ```ruby
 EmailAddressValidator = EmailAddress
 Object.send(:remove_const, :EmailAddress)
+```
 
+Then your application loads with your EmailAddress class. You may
+then use this gem with `EmailAddressValidator` or whatever name you
+gave it above:
+
+```ruby
 EmailAddressValidator.valid?("clark.kent@gmail.com") # => true
 ```
 
