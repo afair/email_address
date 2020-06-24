@@ -35,10 +35,10 @@ module EmailAddress
 
     def validate_email(r,f)
       return if r[f].nil?
-      e = EmailAddress.new(r[f])
+      e = Address.new(r[f])
       unless e.valid?
         r.errors[f] << (@opt[:message] ||
-                       EmailAddress::Config.error_messages[:invalid_address] ||
+                       Config.error_messages[:invalid_address] ||
                        "Invalid Email Address")
       end
     end

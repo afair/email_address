@@ -552,6 +552,18 @@ The value is an array of match tokens.
 * host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
 * exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
 
+### Namespace conflict resolution
+
+If you encounter a collision with the `EmailAddress` namespace,
+it's possible to create an alias prior to loading your code:
+
+```ruby
+EmailAddressValidator = EmailAddress
+Object.send(:remove_const, :EmailAddress)
+
+EmailAddressValidator.valid?("clark.kent@gmail.com") # => true
+```
+
 ## Notes
 
 #### Internationalization

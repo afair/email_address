@@ -107,7 +107,7 @@ module EmailAddress
       %r/^([\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+)$/i.freeze
 
     def initialize(local, config={}, host=nil)
-      @config = config.is_a?(Hash) ? EmailAddress::Config.new(config) : config
+      @config = config.is_a?(Hash) ? Config.new(config) : config
       self.local    = local
       @host         = host
       @error        = @error_message = nil
@@ -388,7 +388,7 @@ module EmailAddress
     def set_error(err, reason=nil)
       @error = err
       @reason= reason
-      @error_message = EmailAddress::Config.error_message(err)
+      @error_message = Config.error_message(err)
       false
     end
 

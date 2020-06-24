@@ -87,7 +87,7 @@ module EmailAddress
     def initialize(host_name, config = {})
       @original = host_name ||= ""
       config[:host_type] ||= :email
-      @config = config.is_a?(Hash) ? EmailAddress::Config.new(config) : config
+      @config = config.is_a?(Hash) ? Config.new(config) : config
       @error = @error_message = nil
       parse(host_name)
     end
@@ -209,7 +209,7 @@ module EmailAddress
     def find_provider # :nodoc:
       return provider if provider
 
-      EmailAddress::Config.providers.each do |provider, config|
+      Config.providers.each do |provider, config|
         if config[:host_match] && matches?(config[:host_match])
           return set_provider(provider, config)
         end
@@ -233,7 +233,7 @@ module EmailAddress
     end
 
     def hosted_provider
-      EmailAddress::Exchanger.cached(dns_name).provider
+      Exchanger.cached(dns_name).provider
     end
 
     ############################################################################
@@ -338,11 +338,11 @@ module EmailAddress
       @_dns_a_record ||= []
     end
 
-    # Returns an array of EmailAddress::Exchanger hosts configured in DNS.
+    # Returns an array of Exchanger hosts configured in DNS.
     # The array will be empty if none are configured.
     def exchangers
       # return nil if @config[:host_type] != :email || !self.dns_enabled?
-      @_exchangers ||= EmailAddress::Exchanger.cached(dns_name, @config)
+      @_exchangers ||= Exchanger.cached(dns_name, @config)
     end
 
     # Returns a DNS TXT Record
@@ -497,7 +497,7 @@ module EmailAddress
     def set_error(err, reason = nil)
       @error = err
       @reason = reason
-      @error_message = EmailAddress::Config.error_message(err)
+      @error_message = Config.error_message(err)
       false
     end
 

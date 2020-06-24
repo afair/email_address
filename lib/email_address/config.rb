@@ -201,7 +201,7 @@ module EmailAddress
     end
 
     def initialize(overrides = {})
-      @config = EmailAddress::Config.all_settings(overrides)
+      @config = Config.all_settings(overrides)
     end
 
     def []=(setting, value)
