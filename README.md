@@ -544,9 +544,6 @@ For the mailbox (AKA account, role), without the tag
 * address_size:       3..254,
   A range specifying the size limit of the complete address
 
-* address_local:      false,
-  Allow localhost, no domain, or local subdomains.
-
 For provider rules to match to domain names and Exchanger hosts
 The value is an array of match tokens.
 * host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
