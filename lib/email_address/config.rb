@@ -182,7 +182,9 @@ module EmailAddress
     end
 
     def self.error_message(name, locale = "en")
-      @errors[locale]["email_address"][name.to_s] || name.to_s
+      I18n.t!("email_address.#{name}")
+    rescue StandardError
+      @errors[locale]["email_address"][name.to_s]
     end
 
     # Customize your own error message text.
