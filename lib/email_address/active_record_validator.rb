@@ -37,9 +37,10 @@ module EmailAddress
       return if r[f].nil?
       e = Address.new(r[f])
       unless e.valid?
-        r.errors[f] << (@opt[:message] ||
-                       Config.error_messages[:invalid_address] ||
-                       "Invalid Email Address")
+        error_message = @opt[:message] ||
+                        Config.error_messages[:invalid_address] ||
+                        "Invalid Email Address"
+        r.errors.add(f, error_message)
       end
     end
 
