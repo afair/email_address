@@ -102,9 +102,9 @@ module EmailAddress
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
 
     CONVENTIONAL_TAG_REGEX  = #  AZaz09_!'+-/=
-      %r/^([\w\!\'\+\-\/\=]+)$/i.freeze
+      %r/^([\w\!\'\+\-\/\=\.]+)$/i.freeze
     RELAXED_TAG_REGEX  = #  AZaz09_!#$%&'*+-/=?^`{|}~
-      %r/^([\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+)$/i.freeze
+      %r/^([\w\.\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+)$/i.freeze
 
     def initialize(local, config={}, host=nil)
       @config = config.is_a?(Hash) ? Config.new(config) : config

@@ -105,4 +105,8 @@ class TestLocal < MiniTest::Test
     assert EmailAddress.valid?("username_____@gmail.com")
   end
 
+  def test_tag_punctuation
+    assert EmailAddress.valid?("first.last+foo.bar@gmail.com")
+  end
+
 end
