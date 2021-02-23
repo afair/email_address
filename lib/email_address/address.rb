@@ -10,7 +10,7 @@ module EmailAddress
     include Comparable
     include Rewriter
 
-    attr_accessor :original, :local, :host, :config, :reason
+    attr_accessor :original, :local, :host, :config, :reason, :locale
 
     CONVENTIONAL_REGEX = /\A#{Local::CONVENTIONAL_MAILBOX_WITHIN}
                            @#{Host::DNS_HOST_REGEX}\z/x
@@ -22,15 +22,16 @@ module EmailAddress
     # Given an email address of the form "local@hostname", this sets up the
     # instance, and initializes the address to the "normalized" format of the
     # address. The original string is available in the #original method.
-    def initialize(email_address, config = {})
+    def initialize(email_address, config = {}, locale = "en")
       @config = Config.new(config)
       @original = email_address
+      @locale = locale
       email_address = (email_address || "").strip
       email_address = parse_rewritten(email_address) unless config[:skip_rewrite]
       local, host = Address.split_local_host(email_address)
 
-      @host = Host.new(host, @config)
-      @local = Local.new(local, @config, @host)
+      @host = Host.new(host, @config, locale)
+      @local = Local.new(local, @config, @host, locale)
       @error = @error_message = nil
     end
 
@@ -276,7 +277,7 @@ module EmailAddress
     def set_error(err, reason = nil)
       @error = err
       @reason = reason
-      @error_message = Config.error_message(err)
+      @error_message = Config.error_message(err, locale)
       false
     end
 
