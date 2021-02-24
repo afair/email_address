@@ -272,6 +272,25 @@ class User < ActiveRecord::Base
 end
 ```
 
+#### Rails I18n
+
+Copy and adapt `lib/email_address/messages.yaml` into your locales and
+create an after initialization callback:
+
+```ruby
+# config/initializers/email_address.rb
+
+Rails.application.config.after_initialize do
+  I18n.available_locales.each do |locale|
+    translations = I18n.t(:email_address, locale: locale)
+
+    next unless translations.is_a? Hash
+
+    EmailAddress::Config.error_messages translations.transform_keys(&:to_s), locale.to_s
+  end
+end
+```
+
 #### Rails Email Address Type Attribute
 
 Initial support is provided for Active Record 5.0 attributes API.
