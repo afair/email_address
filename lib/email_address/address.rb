@@ -159,7 +159,7 @@ module EmailAddress
       [local.munge, host.munge].join("@")
     end
 
-    # Returns and MD5 of the canonical address form. Some cross-system systems
+    # Returns and MD5 of the base address form. Some cross-system systems
     # use the email address MD5 instead of the actual address to refer to the
     # same shared user identity without exposing the actual address when it
     # is not known in common.
@@ -168,7 +168,7 @@ module EmailAddress
     end
     alias md5 reference
 
-    # This returns the SHA1 digest (in a hex string) of the canonical email
+    # This returns the SHA1 digest (in a hex string) of the base email
     # address. See #md5 for more background.
     def sha1(form = :base)
       Digest::SHA1.hexdigest((send(form) || "") + (@config[:sha1_secret] || ""))
