@@ -98,7 +98,7 @@ introduces terms to distinguish types of email addresses.
     madness!."()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a(comment )"@example.org
 
 * *Base* - A unique mailbox without tags. For gmail, is uses the incoming
-  punctation, essential when building an MD5 or SHA1 to match services
+  punctation, essential when building an MD5, SHA1, or SHA256 to match services
   like Gravatar, and email address digest interchange.
 
 * *Canonical* - An unique account address, lower-cased, without the
@@ -234,6 +234,7 @@ Here are some other methods that are available.
 ```ruby
 email.redact        #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
 email.sha1          #=> "bea3f3560a757f8142d38d212a931237b218eb5e"
+email.sha256        #=> "9e2a0270f2d6778e5f647fc9eaf6992705ca183c23d1ed1166586fd54e859f75"
 email.md5           #=> "c5be3597c391169a5ad2870f9ca51901"
 email.host_name     #=> "gmail.com"
 email.provider      #=> :google
@@ -475,6 +476,11 @@ Full translation support would be ideal though.
   This application-level secret is appended to the email_address to compute
   the SHA1 Digest, making it unique to your application so it can't easily be
   discovered by comparing against a known list of email/sha1 pairs.
+
+* sha256_secret -
+  This application-level secret is appended to the email_address to compute
+  the SHA256 Digest, making it unique to your application so it can't easily be
+  discovered by comparing against a known list of email/sha256 pairs.
 
 * munge_string - "*****", the string to replace into munged addresses.
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "digest/sha1"
+require "digest/sha2"
 require "digest/md5"
 
 module EmailAddress
@@ -172,6 +173,10 @@ module EmailAddress
     # address. See #md5 for more background.
     def sha1(form = :base)
       Digest::SHA1.hexdigest((send(form) || "") + (@config[:sha1_secret] || ""))
+    end
+
+    def sha256(form = :base)
+      Digest::SHA256.hexdigest((send(form) || "") + (@config[:sha256_secret] || ""))
     end
 
     #---------------------------------------------------------------------------
