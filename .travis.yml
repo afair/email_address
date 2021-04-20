@@ -1,8 +1,10 @@
 language: ruby
 rvm:
-  - 2.7.0
-  - 2.3.0
-  - jruby-9.2.9.0
+  - 2.5
+  - 2.6
+  - 2.7
+  - 3.0
+  - jruby
 
 addons:
   code_climate:
