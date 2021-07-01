@@ -67,51 +67,51 @@ module EmailAddress
   #                        [CFWS]
   ############################################################################
   class Local
-    attr_reader   :local
+    attr_reader :local
     attr_accessor :mailbox, :comment, :tag, :config, :original
     attr_accessor :syntax, :locale
 
     # RFC-2142: MAILBOX NAMES FOR COMMON SERVICES, ROLES AND FUNCTIONS
-    BUSINESS_MAILBOXES = %w(info marketing sales support)
-    NETWORK_MAILBOXES  = %w(abuse noc security)
-    SERVICE_MAILBOXES  = %w(postmaster hostmaster usenet news webmaster www uucp ftp)
-    SYSTEM_MAILBOXES   = %w(help mailer-daemon root) # Not from RFC-2142
-    ROLE_MAILBOXES     = %w(staff office orders billing careers jobs) # Not from RFC-2142
-    SPECIAL_MAILBOXES  = BUSINESS_MAILBOXES + NETWORK_MAILBOXES + SERVICE_MAILBOXES +
-                         SYSTEM_MAILBOXES + ROLE_MAILBOXES
-    STANDARD_MAX_SIZE  = 64
+    BUSINESS_MAILBOXES = %w[info marketing sales support]
+    NETWORK_MAILBOXES = %w[abuse noc security]
+    SERVICE_MAILBOXES = %w[postmaster hostmaster usenet news webmaster www uucp ftp]
+    SYSTEM_MAILBOXES = %w[help mailer-daemon root] # Not from RFC-2142
+    ROLE_MAILBOXES = %w[staff office orders billing careers jobs] # Not from RFC-2142
+    SPECIAL_MAILBOXES = BUSINESS_MAILBOXES + NETWORK_MAILBOXES + SERVICE_MAILBOXES +
+      SYSTEM_MAILBOXES + ROLE_MAILBOXES
+    STANDARD_MAX_SIZE = 64
 
     # Conventional : word([.-+'_]word)*
-    CONVENTIONAL_MAILBOX_REGEX  = /\A [\p{L}\p{N}_]+ (?: [\.\-\+\'_] [\p{L}\p{N}_]+ )* \z/x
-    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [\.\-\+\'_] [\p{L}\p{N}_]+ )*/x
+    CONVENTIONAL_MAILBOX_REGEX = /\A [\p{L}\p{N}_]+ (?: [.\-+'_] [\p{L}\p{N}_]+ )* \z/x
+    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [.\-+'_] [\p{L}\p{N}_]+ )*/x
 
     # Relaxed: same characters, relaxed order
-    RELAXED_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}_]+ )*/x
-    RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}_]+ (?: [\.\-\+\'_]+ [\p{L}\p{N}_]+ )* \z/x
+    RELAXED_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [.\-+'_]+ [\p{L}\p{N}_]+ )*/x
+    RELAXED_MAILBOX_REGEX = /\A [\p{L}\p{N}_]+ (?: [.\-+'_]+ [\p{L}\p{N}_]+ )* \z/x
 
     # RFC5322 Token: token."token".token (dot-separated tokens)
     #   Quoted Token can also have: SPACE \" \\ ( ) , : ; < > @ [ \ ] .
     STANDARD_LOCAL_WITHIN = /
-      (?: [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-        | \" (?: \\[\" \\] | [\x20-\x21\x23-\x2F\x3A-\x40\x5B\x5D-\x60\x7B-\x7E\p{L}\p{N}] )+ \" )
-      (?: \.  (?: [\p{L}\p{N}\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~\(\)]+
-              | \" (?: \\[\" \\] | [\x20-\x21\x23-\x2F\x3A-\x40\x5B\x5D-\x60\x7B-\x7E\p{L}\p{N}] )+ \" ) )* /x
+      (?: [\p{L}\p{N}!\#$%&'*+\-\/=?\^_`{|}~()]+
+        | " (?: \\[" \\] | [\x20-\x21\x23-\x2F\x3A-\x40\x5B\x5D-\x60\x7B-\x7E\p{L}\p{N}] )+ " )
+      (?: \.  (?: [\p{L}\p{N}!\#$%&'*+\-\/=?\^_`{|}~()]+
+              | " (?: \\[" \\] | [\x20-\x21\x23-\x2F\x3A-\x40\x5B\x5D-\x60\x7B-\x7E\p{L}\p{N}] )+ " ) )* /x
 
     STANDARD_LOCAL_REGEX = /\A #{STANDARD_LOCAL_WITHIN} \z/x
 
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
 
-    CONVENTIONAL_TAG_REGEX  = #  AZaz09_!'+-/=
-      %r/^([\w\!\'\+\-\/\=\.]+)$/i.freeze
-    RELAXED_TAG_REGEX  = #  AZaz09_!#$%&'*+-/=?^`{|}~
-      %r/^([\w\.\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+)$/i.freeze
+    CONVENTIONAL_TAG_REGEX = #  AZaz09_!'+-/=
+      %r{^([\w!'+\-/=.]+)$}i
+    RELAXED_TAG_REGEX = #  AZaz09_!#$%&'*+-/=?^`{|}~
+      %r/^([\w.!\#$%&'*+\-\/=?\^`{|}~]+)$/i
 
-    def initialize(local, config={}, host=nil, locale="en")
+    def initialize(local, config = {}, host = nil, locale = "en")
       @config = config.is_a?(Hash) ? Config.new(config) : config
-      self.local    = local
-      @host         = host
-      @locale       = locale
-      @error        = @error_message = nil
+      self.local = local
+      @host = host
+      @locale = locale
+      @error = @error_message = nil
     end
 
     def local=(raw)
@@ -122,23 +122,23 @@ module EmailAddress
       if @config[:local_parse].is_a?(Proc)
         self.mailbox, self.tag, self.comment = @config[:local_parse].call(raw)
       else
-        self.mailbox, self.tag, self.comment = self.parse(raw)
+        self.mailbox, self.tag, self.comment = parse(raw)
       end
 
       self.format
     end
 
     def parse(raw)
-      if raw =~ /\A\"(.*)\"\z/ # Quoted
+      if raw =~ /\A"(.*)"\z/ # Quoted
         raw = $1
         raw = raw.gsub(/\\(.)/, '\1') # Unescape
       elsif @config[:local_fix] && @config[:local_format] != :standard
-        raw = raw.gsub(' ','')
-        raw = raw.gsub(',','.')
-        #raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
+        raw = raw.delete(" ")
+        raw = raw.tr(",", ".")
+        # raw.gsub!(/([^\p{L}\p{N}]{2,10})/) {|s| s[0] } # Stutter punctuation typo
       end
-      raw, comment = self.parse_comment(raw)
-      mailbox, tag = self.parse_tag(raw)
+      raw, comment = parse_comment(raw)
+      mailbox, tag = parse_tag(raw)
       mailbox ||= ""
       [mailbox, tag, comment]
     end
@@ -157,28 +157,28 @@ module EmailAddress
     end
 
     def parse_tag(raw)
-      separator = @config[:tag_separator] ||= '+'
+      separator = @config[:tag_separator] ||= "+"
       raw.split(separator, 2)
     end
 
     # True if the the value contains only Latin characters (7-bit ASCII)
     def ascii?
-      ! self.unicode?
+      !unicode?
     end
 
     # True if the the value contains non-Latin Unicde characters
     def unicode?
-      self.local =~ /[^\p{InBasicLatin}]/ ? true : false
+      /[^\p{InBasicLatin}]/.match?(local)
     end
 
     # Returns true if the value matches the Redacted format
     def redacted?
-      self.local =~ REDACTED_REGEX ? true : false
+      REDACTED_REGEX.match?(local)
     end
 
     # Returns true if the value matches the Redacted format
     def self.redacted?(local)
-      local =~ REDACTED_REGEX ? true : false
+      REDACTED_REGEX.match?(local)
     end
 
     # Is the address for a common system or business role account?
@@ -191,81 +191,80 @@ module EmailAddress
     end
 
     # Builds the local string according to configurations
-    def format(form=@config[:local_format]||:conventional)
+    def format(form = @config[:local_format] || :conventional)
       if @config[:local_format].is_a?(Proc)
         @config[:local_format].call(self)
       elsif form == :conventional
-        self.conventional
+        conventional
       elsif form == :canonical
-        self.canonical
+        canonical
       elsif form == :relaxed
-        self.relax
+        relax
       elsif form == :standard
-        self.standard
+        standard
       end
     end
 
     # Returns a conventional form of the address
     def conventional
-      if self.tag
-        [self.mailbox, self.tag].join(@config[:tag_separator])
+      if tag
+        [mailbox, tag].join(@config[:tag_separator])
       else
-        self.mailbox
+        mailbox
       end
     end
 
     # Returns a canonical form of the address
     def canonical
       if @config[:mailbox_canonical]
-        @config[:mailbox_canonical].call(self.mailbox)
+        @config[:mailbox_canonical].call(mailbox)
       else
-        self.mailbox.downcase
+        mailbox.downcase
       end
     end
 
     # Relaxed format: mailbox and tag, no comment, no extended character set
     def relax
-      form = self.mailbox
-      form += @config[:tag_separator] + self.tag if self.tag
-      form = form.gsub(/[ \"\(\),:<>@\[\]\\]/,'')
-      form
+      form = mailbox
+      form += @config[:tag_separator] + tag if tag
+      form.gsub(/[ "(),:<>@\[\]\\]/, "")
     end
 
     # Returns a normalized version of the standard address parts.
     def standard
-      form = self.mailbox
-      form += @config[:tag_separator] + self.tag if self.tag
-      form += "(" + self.comment + ")" if self.comment
-      form = form.gsub(/([\\\"])/, '\\\1') # Escape \ and "
-      if form =~ /[ \"\(\),:<>@\[\\\]]/ # Space and "(),:;<>@[\]
-        form = %Q("#{form}")
+      form = mailbox
+      form += @config[:tag_separator] + tag if tag
+      form += "(" + comment + ")" if comment
+      form = form.gsub(/([\\"])/, '\\\1') # Escape \ and "
+      if /[ "(),:<>@\[\\\]]/.match?(form) # Space and "(),:;<>@[\]
+        form = %("#{form}")
       end
       form
     end
 
     # Sets the part to be the conventional form
     def conventional!
-      self.local = self.conventional
+      self.local = conventional
     end
 
     # Sets the part to be the canonical form
     def canonical!
-      self.local = self.canonical
+      self.local = canonical
     end
 
     # Dropps unusual  parts of Standard form to form a relaxed version.
     def relax!
-      self.local = self.relax
+      self.local = relax
     end
 
     # Returns the munged form of the address, like "ma*****"
     def munge
-      self.to_s.sub(/\A(.{1,2}).*/) { |m| $1 + @config[:munge_string] }
+      to_s.sub(/\A(.{1,2}).*/) { |m| $1 + @config[:munge_string] }
     end
 
     # Mailbox with trailing numbers removed
     def root_name
-      self.mailbox =~ /\A(.+?)\d+\z/ ? $1 : self.mailbox
+      mailbox =~ /\A(.+?)\d+\z/ ? $1 : mailbox
     end
 
     ############################################################################
@@ -273,19 +272,19 @@ module EmailAddress
     ############################################################################
 
     # True if the part is valid according to the configurations
-    def valid?(format=@config[:local_format]||:conventional)
+    def valid?(format = @config[:local_format] || :conventional)
       if @config[:mailbox_validator].is_a?(Proc)
-        @config[:mailbox_validator].call(self.mailbox, self.tag)
+        @config[:mailbox_validator].call(mailbox, tag)
       elsif format.is_a?(Proc)
         format.call(self)
       elsif format == :conventional
-        self.conventional?
+        conventional?
       elsif format == :relaxed
-        self.relaxed?
+        relaxed?
       elsif format == :redacted
-        self.redacted?
+        redacted?
       elsif format == :standard
-        self.standard?
+        standard?
       elsif format == :none
         true
       else
@@ -296,13 +295,13 @@ module EmailAddress
     # Returns the format of the address
     def format?
       # if :custom
-      if self.conventional?
+      if conventional?
         :conventional
-      elsif self.relaxed?
+      elsif relaxed?
         :relax
-      elsif self.redacted?
+      elsif redacted?
         :redacted
-      elsif self.standard?
+      elsif standard?
         :standard
       else
         :invalid
@@ -310,38 +309,38 @@ module EmailAddress
     end
 
     def valid_size?
-      return set_error(:local_size_long) if self.local.size > STANDARD_MAX_SIZE
-      if @host && @host.hosted_service?
+      return set_error(:local_size_long) if local.size > STANDARD_MAX_SIZE
+      if @host&.hosted_service?
         return false if @config[:local_private_size] && !valid_size_checks(@config[:local_private_size])
-      else
-        return false if @config[:local_size] && !valid_size_checks(@config[:local_size])
+      elsif @config[:local_size] && !valid_size_checks(@config[:local_size])
+        return false
       end
       return false if @config[:mailbox_size] && !valid_size_checks(@config[:mailbox_size])
       true
     end
 
     def valid_size_checks(range)
-      return set_error(:local_size_short) if self.mailbox.size < range.first
-      return set_error(:local_size_long)  if self.mailbox.size > range.last
+      return set_error(:local_size_short) if mailbox.size < range.first
+      return set_error(:local_size_long) if mailbox.size > range.last
       true
     end
 
-    def valid_encoding?(enc=@config[:local_encoding]||:ascii)
-      return false if enc == :ascii && self.unicode?
+    def valid_encoding?(enc = @config[:local_encoding] || :ascii)
+      return false if enc == :ascii && unicode?
       true
     end
 
     # True if the part matches the conventional format
     def conventional?
       self.syntax = :invalid
-      if self.tag
-        return false unless self.mailbox =~ CONVENTIONAL_MAILBOX_REGEX &&
-          self.tag =~ CONVENTIONAL_TAG_REGEX
+      if tag
+        return false unless mailbox =~ CONVENTIONAL_MAILBOX_REGEX &&
+          tag =~ CONVENTIONAL_TAG_REGEX
       else
-        return false unless self.local =~ CONVENTIONAL_MAILBOX_REGEX
+        return false unless CONVENTIONAL_MAILBOX_REGEX.match?(local)
       end
-      self.valid_size? or return false
-      self.valid_encoding? or return false
+      valid_size? or return false
+      valid_encoding? or return false
       self.syntax = :conventional
       true
     end
@@ -349,12 +348,12 @@ module EmailAddress
     # Relaxed conventional is not so strict about character order.
     def relaxed?
       self.syntax = :invalid
-      self.valid_size? or return false
-      self.valid_encoding? or return false
-      if self.tag
-        return false unless self.mailbox =~ RELAXED_MAILBOX_REGEX &&
-          self.tag =~ RELAXED_TAG_REGEX
-      elsif self.local =~ RELAXED_MAILBOX_REGEX
+      valid_size? or return false
+      valid_encoding? or return false
+      if tag
+        return false unless mailbox =~ RELAXED_MAILBOX_REGEX &&
+          tag =~ RELAXED_TAG_REGEX
+      elsif RELAXED_MAILBOX_REGEX.match?(local)
         self.syntax = :relaxed
         true
       else
@@ -365,9 +364,9 @@ module EmailAddress
     # True if the part matches the RFC standard format
     def standard?
       self.syntax = :invalid
-      self.valid_size? or return false
-      self.valid_encoding? or return false
-      if self.local =~ STANDARD_LOCAL_REGEX
+      valid_size? or return false
+      valid_encoding? or return false
+      if STANDARD_LOCAL_REGEX.match?(local)
         self.syntax = :standard
         true
       else
@@ -380,26 +379,23 @@ module EmailAddress
     def matches?(*rules)
       rules.flatten.each do |r|
         if r =~ /(.+)@\z/
-          return r if File.fnmatch?($1, self.local)
+          return r if File.fnmatch?($1, local)
         end
       end
       false
     end
 
-    def set_error(err, reason=nil)
+    def set_error(err, reason = nil)
       @error = err
-      @reason= reason
+      @reason = reason
       @error_message = Config.error_message(err, locale)
       false
     end
 
-    def error_message
-      @error_message
-    end
+    attr_reader :error_message
 
     def error
-      self.valid? ? nil : ( @error || :local_invalid)
+      valid? ? nil : (@error || :local_invalid)
     end
-
   end
 end

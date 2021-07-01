@@ -1,17 +1,15 @@
 # frozen_string_literal: true
 
-require 'base64'
+require "base64"
 
 module EmailAddress::Rewriter
-
-  SRS_FORMAT_REGEX   = /\ASRS0=(....)=(\w\w)=(.+?)=(.+?)@(.+)\z/
+  SRS_FORMAT_REGEX = /\ASRS0=(....)=(\w\w)=(.+?)=(.+?)@(.+)\z/
 
   def parse_rewritten(e)
     @rewrite_scheme = nil
-    @rewrite_error  = nil
-    e = parse_srs(e)
+    @rewrite_error = nil
+    parse_srs(e)
     # e = parse_batv(e)
-    e
   end
 
   #---------------------------------------------------------------------------
@@ -24,9 +22,9 @@ module EmailAddress::Rewriter
   # a different domain.
   # Format: SRS0=HHH=TT=domain=local@sending-domain.com
   #---------------------------------------------------------------------------
-  def srs(sending_domain, options={}, &block)
-    tt = srs_tt()
-    a = [tt, self.hostname, self.local.to_s].join("=") + "@" + sending_domain
+  def srs(sending_domain, options = {}, &block)
+    tt = srs_tt
+    a = [tt, hostname, local.to_s].join("=") + "@" + sending_domain
     hhh = srs_hash(a, options, &block)
 
     ["SRS0", hhh, a].join("=")
@@ -36,11 +34,11 @@ module EmailAddress::Rewriter
     email.match(SRS_FORMAT_REGEX) ? true : false
   end
 
-  def parse_srs(email, options={}, &block)
-    if email && email.match(SRS_FORMAT_REGEX)
+  def parse_srs(email, options = {}, &block)
+    if email&.match(SRS_FORMAT_REGEX)
       @rewrite_scheme = :srs
       hhh, tt, domain, local, sending_domain = [$1, $2, $3, $4, $5]
-      hhh = tt = sending_domain if false && hhh # Hide warnings for now :-)
+      # hhh = tt = sending_domain if false && hhh # Hide warnings for now :-)
       a = [tt, domain, local].join("=") + "@" + sending_domain
       unless srs_hash(a, options, &block) === hhh
         @rewrite_error = "Invalid SRS Email Address: Possibly altered"
@@ -58,16 +56,16 @@ module EmailAddress::Rewriter
   # Returns a 2-character code for the day. After a few days the code will roll.
   # TT has a one-day resolution in order to make the address invalid after a few days.
   # The cycle period is 3.5 years. Used to control late bounces and harvesting.
-  def srs_tt(t=Time.now.utc)
-    Base64.encode64((t.to_i / (60*60*24) %  210).to_s)[0,2]
+  def srs_tt(t = Time.now.utc)
+    Base64.encode64((t.to_i / (60 * 60 * 24) % 210).to_s)[0, 2]
   end
 
-  def srs_hash(email, options={}, &block)
+  def srs_hash(email, options = {}, &block)
     key = options[:key] || @config[:key] || email.reverse
-    if block_given?
-      block.call(email)[0,4]
+    if block
+      block.call(email)[0, 4]
     else
-      Base64.encode64(Digest::SHA1.digest(email + key))[0,4]
+      Base64.encode64(Digest::SHA1.digest(email + key))[0, 4]
     end
   end
 
@@ -85,17 +83,17 @@ module EmailAddress::Rewriter
   #        * SSSSSS: sha1( KDDD + orig-mailfrom + key)[0,6]
   # See:   https://tools.ietf.org/html/draft-levine-smtp-batv-01
   #---------------------------------------------------------------------------
-  def batv_prvs(options={})
+  def batv_prvs(options = {})
     k = options[:prvs_key_id] || "0"
     prvs_days = options[:prvs_days] || @config[:prvs_days] || 30
     ddd = prvs_day(prvs_days)
-    ssssss = prvs_sign(k, ddd, self.to_s, options={})
-    ["prvs=", k, ddd, ssssss, '=', self.to_s].join('')
+    ssssss = prvs_sign(k, ddd, to_s, options)
+    ["prvs=", k, ddd, ssssss, "=", to_s].join("")
   end
 
   PRVS_REGEX = /\Aprvs=(\d)(\d{3})(\w{6})=(.+)\z/
 
-  def parse_prvs(email, options={})
+  def parse_prvs(email, options = {})
     if email.match(PRVS_REGEX)
       @rewrite_scheme = :prvs
       k, ddd, ssssss, email = [$1, $2, $3, $4]
@@ -119,13 +117,13 @@ module EmailAddress::Rewriter
   end
 
   def prvs_day(days)
-    ((Time.now.to_i + (days*24*60*60)) / (24*60*60)).to_s[-3,3]
+    ((Time.now.to_i + (days * 24 * 60 * 60)) / (24 * 60 * 60)).to_s[-3, 3]
   end
 
-  def prvs_sign(k, ddd, email, options={})
-    str = [ddd, ssssss, '=', self.to_s].join('')
+  def prvs_sign(k, ddd, email, options = {})
+    str = [ddd, ssssss, "=", to_s].join("")
     key = options["key_#{k}".to_i] || @config["key_#{k}".to_i] || str.reverse
-    Digest::SHA1.hexdigest([k,ddd, email, key].join(''))[0,6]
+    Digest::SHA1.hexdigest([k, ddd, email, key].join(""))[0, 6]
   end
 
   #---------------------------------------------------------------------------
@@ -136,12 +134,11 @@ module EmailAddress::Rewriter
   # To handle incoming verp, the "tag" is the recipient email address,
   # remember to convert the last '=' into a '@' to reconstruct it.
   #---------------------------------------------------------------------------
-  def verp(recipient, split_char='+')
-    self.local.to_s +
-      split_char + recipient.gsub("@","=") +
-      "@" + self.hostname
+  def verp(recipient, split_char = "+")
+    local.to_s +
+      split_char + recipient.tr("@", "=") +
+      "@" + hostname
   end
 
   # NEXT: DMARC, SPF Validation
-
 end

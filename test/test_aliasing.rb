@@ -1,5 +1,4 @@
-# encoding: UTF-8
-require_relative 'test_helper'
+require_relative "test_helper"
 
 class TestAliasing < MiniTest::Test
   def setup
