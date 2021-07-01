@@ -88,8 +88,8 @@ module EmailAddress
     def host_name
       @host.host_name
     end
-    alias right host_name
-    alias hostname host_name
+    alias_method :right, :host_name
+    alias_method :hostname, :host_name
 
     # Returns the ESP (Email Service Provider) or ISP name derived
     # using the provider configuration rules.
@@ -113,7 +113,7 @@ module EmailAddress
         "#{local}@#{host}"
       end
     end
-    alias to_s normal
+    alias_method :to_s, :normal
 
     def inspect
       "#<#{self.class}:0x#{object_id.to_s(16)} address=\"#{self}\">"
@@ -168,7 +168,7 @@ module EmailAddress
     def reference(form = :base)
       Digest::MD5.hexdigest(send(form))
     end
-    alias md5 reference
+    alias_method :md5, :reference
 
     # This returns the SHA1 digest (in a hex string) of the base email
     # address. See #md5 for more background.
@@ -186,11 +186,11 @@ module EmailAddress
 
     # Equal matches the normalized version of each address. Use the Threequal to check
     # for match on canonical or redacted versions of addresses
-    def ==(other_email)
-      to_s == other_email.to_s
+    def ==(other)
+      to_s == other.to_s
     end
-    alias eql? ==
-    alias equal? ==
+    alias_method :eql?, :==
+    alias_method :equal?, :==
 
     # Return the <=> or CMP comparison operator result (-1, 0, +1) on the comparison
     # of this addres with another, using the canonical or redacted forms.
@@ -203,12 +203,12 @@ module EmailAddress
         redact == other_email.canonical ||
         canonical == other_email.redact
     end
-    alias include? same_as?
+    alias_method :include?, :same_as?
 
     # Return the <=> or CMP comparison operator result (-1, 0, +1) on the comparison
     # of this addres with another, using the normalized form.
-    def <=>(other_email)
-      to_s <=> other_email.to_s
+    def <=>(other)
+      to_s <=> other.to_s
     end
 
     # Address matches one of these Matcher rule patterns
@@ -220,7 +220,7 @@ module EmailAddress
 
       # Does "root@*.com" match "root@example.com" domain name
       rules.each do |r|
-        if r.match(/.+@.+/)
+        if /.+@.+/.match?(r)
           return r if File.fnmatch?(r, to_s)
         end
       end

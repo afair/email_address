@@ -1,9 +1,9 @@
 require "bundler/gem_tasks"
 
 require "bundler/setup"
-require 'rake/testtask'
+require "rake/testtask"
 
-task :default => :test
+task default: :test
 
 desc "Run the Test Suite, toot suite"
 Rake::TestTask.new do |t|

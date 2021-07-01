@@ -457,21 +457,6 @@ module EmailAddress
       return true if host_name == "localhost"
       return false unless ip_address
       IPAddr.new(ip_address).loopback?
-      # if ip_address
-      #  rel =
-      #    if ip_address.include?(":")
-      #      NetAddr::IPv6Net.parse("" + "::1").rel(
-      #        NetAddr::IPv6Net.parse(ip_address)
-      #      )
-      #    else
-      #      NetAddr::IPv4Net.parse("" + "127.0.0.0/8").rel(
-      #        NetAddr::IPv4Net.parse(ip_address)
-      #      )
-      #    end
-      #  !rel.nil? && rel >= 0
-      # else
-      #  host_name == "localhost"
-      # end
     end
 
     # Connects to host to test it can receive email. This should NOT be performed

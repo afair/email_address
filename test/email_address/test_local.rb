@@ -1,22 +1,20 @@
-# encoding: UTF-8
-require_relative '../test_helper'
+require_relative "../test_helper"
 
 class TestLocal < MiniTest::Test
-
   def test_valid_standard
     [ # Via https://en.wikipedia.org/wiki/Email_address
-      %Q{prettyandsimple},
-      %Q{very.common},
-      %Q{disposable.style.email.with+symbol},
-      %Q{other.email-with-dash},
-      %Q{"much.more unusual"},
-      %Q{"(comment)very.unusual.@.unusual.com"},
-      %Q{#!$%&'*+-/=?^_`{}|~},
-      %Q{" "},
-      %Q{"very.(),:;<>[]\\".VERY.\\"very@\\ \\"very\\".unusual"},
-      %Q{"()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a"},
-      %Q{token." ".token},
-      %Q{abc."defghi".xyz},
+      %(prettyandsimple),
+      %(very.common),
+      %(disposable.style.email.with+symbol),
+      %(other.email-with-dash),
+      %("much.more unusual"),
+      %{"(comment)very.unusual.@.unusual.com"},
+      %(#!$%&'*+-/=?^_`{}|~),
+      %(" "),
+      %{"very.(),:;<>[]\\".VERY.\\"very@\\ \\"very\\".unusual"},
+      %{"()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a"},
+      %(token." ".token),
+      %(abc."defghi".xyz)
     ].each do |local|
       assert EmailAddress::Local.new(local, local_fix: false).standard?, local
     end
@@ -24,15 +22,15 @@ class TestLocal < MiniTest::Test
 
   def test_invalid_standard
     [ # Via https://en.wikipedia.org/wiki/Email_address
-      %Q{A@b@c},
-      %Q{a"b(c)d,e:f;g<h>i[j\k]l},
-      %Q{just"not"right},
-      %Q{this is"not\allowed},
-      %Q{this\ still\"not\\allowed},
-      %Q{john..doe},
-      %Q{ invalid},
-      %Q{invalid },
-      %Q{abc"defghi"xyz},
+      %(A@b@c),
+      %{a"b(c)d,e:f;g<h>i[j\k]l},
+      %(just"not"right),
+      %(this is"not\allowed),
+      %(this\ still\"not\\allowed),
+      %(john..doe),
+      %( invalid),
+      %(invalid ),
+      %(abc"defghi"xyz)
     ].each do |local|
       assert_equal false, EmailAddress::Local.new(local, local_fix: false).standard?, local
     end
@@ -46,22 +44,21 @@ class TestLocal < MiniTest::Test
   end
 
   def test_unicode
-    assert ! EmailAddress::Local.new("üñîçøðé1", local_encoding: :ascii).standard?, "not üñîçøðé1"
+    assert !EmailAddress::Local.new("üñîçøðé1", local_encoding: :ascii).standard?, "not üñîçøðé1"
     assert EmailAddress::Local.new("üñîçøðé2", local_encoding: :unicode).standard?, "üñîçøðé2"
     assert EmailAddress::Local.new("test", local_encoding: :unicode).valid?, "unicode should include ascii"
-    assert ! EmailAddress::Local.new("üñîçøðé3").valid?, "üñîçøðé3 valid"
+    assert !EmailAddress::Local.new("üñîçøðé3").valid?, "üñîçøðé3 valid"
   end
 
-
   def test_valid_conventional
-    %w( first.last first First+Tag o'brien).each do |local|
+    %w[first.last first First+Tag o'brien].each do |local|
       assert EmailAddress::Local.new(local).conventional?, local
     end
   end
 
   def test_invalid_conventional
-    (%w( first;.last +leading trailing+ o%brien) + ["first space"]).each do |local|
-      assert ! EmailAddress::Local.new(local, local_fix:false).conventional?, local
+    (%w[first;.last +leading trailing+ o%brien] + ["first space"]).each do |local|
+      assert !EmailAddress::Local.new(local, local_fix: false).conventional?, local
     end
   end
 
@@ -72,8 +69,8 @@ class TestLocal < MiniTest::Test
 
   def test_format
     assert_equal :conventional, EmailAddress::Local.new("can1").format?
-    assert_equal :standard, EmailAddress::Local.new(%Q{"can1"}).format?
-    assert_equal "can1", EmailAddress::Local.new(%Q{"can1(commment)"}).format(:conventional)
+    assert_equal :standard, EmailAddress::Local.new(%("can1")).format?
+    assert_equal "can1", EmailAddress::Local.new(%{"can1(commment)"}).format(:conventional)
   end
 
   def test_redacted
@@ -84,9 +81,9 @@ class TestLocal < MiniTest::Test
 
   def test_matches
     a = EmailAddress.new("User+tag@gmail.com")
-    assert_equal false,  a.matches?('user')
-    assert_equal false,  a.matches?('user@')
-    assert_equal 'user*@',  a.matches?('user*@')
+    assert_equal false, a.matches?("user")
+    assert_equal false, a.matches?("user@")
+    assert_equal "user*@", a.matches?("user*@")
   end
 
   def test_munge
@@ -108,5 +105,4 @@ class TestLocal < MiniTest::Test
   def test_tag_punctuation
     assert EmailAddress.valid?("first.last+foo.bar@gmail.com")
   end
-
 end

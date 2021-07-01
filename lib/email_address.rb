@@ -3,7 +3,6 @@
 # EmailAddress parses and validates email addresses against RFC standard,
 # conventional, canonical, formats and other special uses.
 module EmailAddress
-
   require "email_address/config"
   require "email_address/exchanger"
   require "email_address/host"
@@ -49,20 +48,20 @@ module EmailAddress
 
     # Creates an instance of this email address.
     # This is a short-cut to EmailAddress::Address.new
-    def new(email_address, config={}, locale = 'en')
+    def new(email_address, config = {}, locale = "en")
       Address.new(email_address, config, locale)
     end
 
-    def new_redacted(email_address, config={}, locale = 'en')
+    def new_redacted(email_address, config = {}, locale = "en")
       Address.new(Address.new(email_address, config, locale).redact)
     end
 
-    def new_canonical(email_address, config={}, locale = 'en')
+    def new_canonical(email_address, config = {}, locale = "en")
       Address.new(Address.new(email_address, config, locale).canonical, config)
     end
 
     # Does the email address match any of the given rules
-    def matches?(email_address, rules, config={}, locale = 'en')
+    def matches?(email_address, rules, config = {}, locale = "en")
       Address.new(email_address, config, locale).matches?(rules)
     end
   end
