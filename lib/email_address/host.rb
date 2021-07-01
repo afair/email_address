@@ -34,7 +34,7 @@ module EmailAddress
     attr_reader :host_name
     attr_accessor :dns_name, :domain_name, :registration_name,
       :tld, :tld2, :subdomains, :ip_address, :config, :provider,
-      :comment, :error_message, :reason
+      :comment, :error_message, :reason, :locale
     MAX_HOST_LENGTH = 255
 
     # Sometimes, you just need a Regexp...
@@ -84,8 +84,9 @@ module EmailAddress
 
     # host name -
     #   * host type - :email for an email host, :mx for exchanger host
-    def initialize(host_name, config = {})
+    def initialize(host_name, config = {}, locale = "en")
       @original = host_name ||= ""
+      @locale = locale
       config[:host_type] ||= :email
       @config = config.is_a?(Hash) ? Config.new(config) : config
       @error = @error_message = nil
@@ -497,7 +498,7 @@ module EmailAddress
     def set_error(err, reason = nil)
       @error = err
       @reason = reason
-      @error_message = Config.error_message(err)
+      @error_message = Config.error_message(err, locale)
       false
     end
 

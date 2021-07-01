@@ -69,7 +69,7 @@ module EmailAddress
   class Local
     attr_reader   :local
     attr_accessor :mailbox, :comment, :tag, :config, :original
-    attr_accessor :syntax
+    attr_accessor :syntax, :locale
 
     # RFC-2142: MAILBOX NAMES FOR COMMON SERVICES, ROLES AND FUNCTIONS
     BUSINESS_MAILBOXES = %w(info marketing sales support)
@@ -106,10 +106,11 @@ module EmailAddress
     RELAXED_TAG_REGEX  = #  AZaz09_!#$%&'*+-/=?^`{|}~
       %r/^([\w\.\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+)$/i.freeze
 
-    def initialize(local, config={}, host=nil)
+    def initialize(local, config={}, host=nil, locale="en")
       @config = config.is_a?(Hash) ? Config.new(config) : config
       self.local    = local
       @host         = host
+      @locale       = locale
       @error        = @error_message = nil
     end
 
@@ -388,7 +389,7 @@ module EmailAddress
     def set_error(err, reason=nil)
       @error = err
       @reason= reason
-      @error_message = Config.error_message(err)
+      @error_message = Config.error_message(err, locale)
       false
     end
 

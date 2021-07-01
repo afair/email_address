@@ -194,9 +194,14 @@ module EmailAddress
     # Customize your own error message text.
     def self.error_messages(hash = {}, locale = "en", *extra)
       hash = extra.first if extra.first.is_a? Hash
-      unless hash.empty?
+
+      @errors[locale] ||= {}
+      @errors[locale]["email_address"] ||= {}
+
+      unless hash.nil? || hash.empty?
         @errors[locale]["email_address"] = @errors[locale]["email_address"].merge(hash)
       end
+
       @errors[locale]["email_address"]
     end
 
