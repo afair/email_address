@@ -1,6 +1,5 @@
 require "simpleidn"
 require "resolv"
-require "netaddr"
 require "net/smtp"
 
 module EmailAddress
@@ -38,11 +37,11 @@ module EmailAddress
     MAX_HOST_LENGTH = 255
 
     # Sometimes, you just need a Regexp...
-    DNS_HOST_REGEX = / [\p{L}\p{N}]+ (?: (?: \-{1,2} | \.) [\p{L}\p{N}]+ )*/x
+    DNS_HOST_REGEX = / [\p{L}\p{N}]+ (?: (?: -{1,2} | \.) [\p{L}\p{N}]+ )*/x
 
     # The IPv4 and IPv6 were lifted from Resolv::IPv?::Regex and tweaked to not
     # \A...\z anchor at the edges.
-    IPv6_HOST_REGEX = /\[IPv6:
+    IPV6_HOST_REGEX = /\[IPv6:
       (?: (?:(?x-mi:
       (?:[0-9A-Fa-f]{1,4}:){7}
          [0-9A-Fa-f]{1,4}
@@ -61,7 +60,7 @@ module EmailAddress
       (?: \d+)\.(?: \d+)\.(?: \d+)\.(?: \d+)
       )))\]/ix
 
-    IPv4_HOST_REGEX = /\[((?x-mi:0
+    IPV4_HOST_REGEX = /\[((?x-mi:0
                |1(?:[0-9][0-9]?)?
                |2(?:[0-4][0-9]?|5[0-5]?|[6-9])?
                |[3-9][0-9]?))\.((?x-mi:0
@@ -80,7 +79,7 @@ module EmailAddress
 
     # Matches Host forms: DNS name, IPv4, or IPv6 formats
     STANDARD_HOST_REGEX = /\A (?: #{DNS_HOST_REGEX}
-                              | #{IPv4_HOST_REGEX} | #{IPv6_HOST_REGEX}) \z/ix
+                              | #{IPV4_HOST_REGEX} | #{IPV6_HOST_REGEX}) \z/ix
 
     # host name -
     #   * host type - :email for an email host, :mx for exchanger host
@@ -105,7 +104,7 @@ module EmailAddress
         dns_name
       end
     end
-    alias to_s name
+    alias_method :to_s, :name
 
     # The canonical host name is the simplified, DNS host name
     def canonical
@@ -150,7 +149,7 @@ module EmailAddress
       if @config[:host_remove_spaces]
         @host_name = @host_name.delete(" ")
       end
-      @dns_name = if /[^[:ascii:]]/.match(host_name)
+      @dns_name = if /[^[:ascii:]]/.match?(host_name)
         ::SimpleIDN.to_ascii(host_name)
       else
         host_name
@@ -230,7 +229,7 @@ module EmailAddress
     def parts
       {host_name: host_name, dns_name: dns_name, subdomain: subdomains,
        registration_name: registration_name, domain_name: domain_name,
-       tld2: tld2, tld: tld, ip_address: ip_address,}
+       tld2: tld2, tld: tld, ip_address: ip_address}
     end
 
     def hosted_provider
@@ -247,7 +246,7 @@ module EmailAddress
     end
 
     def ip?
-      ip_address.nil? ? false : true
+      !!ip_address
     end
 
     def ipv4?
@@ -291,7 +290,7 @@ module EmailAddress
     # Does "sub.example.com" match ".com" and ".example.com" top level names?
     # Matches TLD (uk) or TLD2 (co.uk)
     def tld_matches?(rule)
-      rule.match(/\A\.(.+)\z/) && ($1 == tld || $1 == tld2) ? true : false
+      rule.match(/\A\.(.+)\z/) && ($1 == tld || $1 == tld2) # ? true : false
     end
 
     def provider_matches?(rule)
@@ -311,13 +310,8 @@ module EmailAddress
     # the passed CIDR string ("10.9.8.0/24" or "2001:..../64")
     def ip_matches?(cidr)
       return false unless ip_address
-      return cidr if !cidr.include?("/") && cidr == ip_address
-      if cidr.include?(":") && ip_address.include?(":")
-        return cidr if NetAddr::IPv6Net.parse(cidr).contains(NetAddr::IPv6.parse(ip_address))
-      elsif cidr.include?(".") && ip_address.include?(".")
-        return cidr if NetAddr::IPv4Net.parse(cidr).contains(NetAddr::IPv4.parse(ip_address))
-      end
-      false
+      net = IPAddr.new(cidr)
+      net.include?(IPAddr.new(ip_address))
     end
 
     ############################################################################
@@ -334,7 +328,7 @@ module EmailAddress
     # Returns: [official_hostname, alias_hostnames, address_family, *address_list]
     def dns_a_record
       @_dns_a_record = "0.0.0.0" if @config[:dns_lookup] == :off
-      @_dns_a_record ||= Socket.gethostbyname(dns_name)
+      @_dns_a_record ||= Addrinfo.getaddrinfo(dns_name, 80) # Port 80 for A rec, 25 for MX
     rescue SocketError # not found, but could also mean network not work
       @_dns_a_record ||= []
     end
@@ -354,8 +348,8 @@ module EmailAddress
         records = begin
           dns.getresources(alternate_host || dns_name,
             Resolv::DNS::Resource::IN::TXT)
-                  rescue Resolv::ResolvTimeout
-                    []
+        rescue Resolv::ResolvTimeout
+          []
         end
 
         records.empty? ? nil : records.map(&:data).join(" ")
@@ -460,21 +454,24 @@ module EmailAddress
     end
 
     def localhost?
-      if ip_address
-        rel =
-          if ip_address.include?(":")
-            NetAddr::IPv6Net.parse("" + "::1").rel(
-              NetAddr::IPv6Net.parse(ip_address)
-            )
-          else
-            NetAddr::IPv4Net.parse("" + "127.0.0.0/8").rel(
-              NetAddr::IPv4Net.parse(ip_address)
-            )
-          end
-        !rel.nil? && rel >= 0
-      else
-        host_name == "localhost"
-      end
+      return true if host_name == "localhost"
+      return false unless ip_address
+      IPAddr.new(ip_address).loopback?
+      # if ip_address
+      #  rel =
+      #    if ip_address.include?(":")
+      #      NetAddr::IPv6Net.parse("" + "::1").rel(
+      #        NetAddr::IPv6Net.parse(ip_address)
+      #      )
+      #    else
+      #      NetAddr::IPv4Net.parse("" + "127.0.0.0/8").rel(
+      #        NetAddr::IPv4Net.parse(ip_address)
+      #      )
+      #    end
+      #  !rel.nil? && rel >= 0
+      # else
+      #  host_name == "localhost"
+      # end
     end
 
     # Connects to host to test it can receive email. This should NOT be performed

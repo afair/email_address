@@ -1,5 +1,4 @@
-#encoding: utf-8
-require_relative '../test_helper'
+require_relative "../test_helper"
 
 class TestAddress < Minitest::Test
   def test_address
@@ -22,7 +21,7 @@ class TestAddress < Minitest::Test
   def test_host
     a = EmailAddress.new("User+tag@example.com")
     assert_equal "example.com", a.hostname
-    #assert_equal :default, a.provider
+    # assert_equal :default, a.provider
   end
 
   # ADDRESS
@@ -34,7 +33,7 @@ class TestAddress < Minitest::Test
     assert_equal "{63a710569261a24b3766275b7000ce8d7b32e2f7}@example.com", a.redact
     assert_equal "{b58996c504c5638798eb6b511e6f49af}@example.com", a.redact(:md5)
     assert_equal "b58996c504c5638798eb6b511e6f49af", a.reference
-    assert_equal "6bdd00c53645790ad9bbcb50caa93880",  EmailAddress.reference("Gmail.User+tag@gmail.com")
+    assert_equal "6bdd00c53645790ad9bbcb50caa93880", EmailAddress.reference("Gmail.User+tag@gmail.com")
   end
 
   def test_sha1
@@ -43,7 +42,7 @@ class TestAddress < Minitest::Test
   end
 
   def test_sha1_with_secret
-    a = EmailAddress.new("User+tag@example.com", sha1_secret: 'test-secret')
+    a = EmailAddress.new("User+tag@example.com", sha1_secret: "test-secret")
     assert_equal "122df4ec3ce7121db6edc06a9e29eab39a7e8007", a.sha1
   end
 
@@ -53,7 +52,7 @@ class TestAddress < Minitest::Test
   end
 
   def test_sha256_with_secret
-    a = EmailAddress.new("User+tag@example.com", sha256_secret: 'test-secret')
+    a = EmailAddress.new("User+tag@example.com", sha256_secret: "test-secret")
     assert_equal "480899ff53ccd446cc123f0c5685869644af445e788f1b559054919674307a07", a.sha256
   end
 
@@ -64,23 +63,23 @@ class TestAddress < Minitest::Test
 
   # COMPARISON & MATCHING
   def test_compare
-    a = ("User+tag@example.com")
-    #e = EmailAddress.new("user@example.com")
+    a = "User+tag@example.com"
+    # e = EmailAddress.new("user@example.com")
     n = EmailAddress.new(a)
     c = EmailAddress.new_canonical(a)
-    #r = EmailAddress.new_redacted(a)
+    # r = EmailAddress.new_redacted(a)
     assert_equal true, n == "user+tag@example.com"
-    assert_equal true, n >  "b@example.com"
+    assert_equal true, n > "b@example.com"
     assert_equal true, n.same_as?(c)
     assert_equal true, n.same_as?(a)
   end
 
   def test_matches
     a = EmailAddress.new("User+tag@gmail.com")
-    assert_equal false,  a.matches?('mail.com')
-    assert_equal 'google',  a.matches?('google')
-    assert_equal 'user+tag@',  a.matches?('user+tag@')
-    assert_equal 'user*@gmail*',  a.matches?('user*@gmail*')
+    assert_equal false, a.matches?("mail.com")
+    assert_equal "google", a.matches?("google")
+    assert_equal "user+tag@", a.matches?("user+tag@")
+    assert_equal "user*@gmail*", a.matches?("user*@gmail*")
   end
 
   def test_empty_address
@@ -94,18 +93,18 @@ class TestAddress < Minitest::Test
   # VALIDATION
   def test_valid
     assert EmailAddress.valid?("User+tag@example.com", host_validation: :a), "valid 1"
-    assert ! EmailAddress.valid?("User%tag@example.com", host_validation: :a), "valid 2"
-    assert EmailAddress.new("ɹᴉɐℲuǝll∀@ɹᴉɐℲuǝll∀.ws", local_encoding: :uncode, host_validation: :syntax ), "valid unicode"
+    assert !EmailAddress.valid?("User%tag@example.com", host_validation: :a), "valid 2"
+    assert EmailAddress.new("ɹᴉɐℲuǝll∀@ɹᴉɐℲuǝll∀.ws", local_encoding: :uncode, host_validation: :syntax), "valid unicode"
   end
 
   def test_localhost
     e = EmailAddress.new("User+tag.gmail.ws") # No domain means localhost
-    assert_equal '', e.hostname
+    assert_equal "", e.hostname
     assert_equal false, e.valid? # localhost not allowed by default
     assert_equal EmailAddress.error("user1"), "Invalid Domain Name"
-    assert_equal EmailAddress.error("user1", host_local:true), "This domain is not configured to accept email"
-    assert_equal EmailAddress.error("user1@localhost", host_local:true), "This domain is not configured to accept email"
-    assert_nil EmailAddress.error("user2@localhost", host_local:true, dns_lookup: :off, host_validation: :syntax)
+    assert_equal EmailAddress.error("user1", host_local: true), "This domain is not configured to accept email"
+    assert_equal EmailAddress.error("user1@localhost", host_local: true), "This domain is not configured to accept email"
+    assert_nil EmailAddress.error("user2@localhost", host_local: true, dns_lookup: :off, host_validation: :syntax)
   end
 
   def test_regexen
@@ -117,7 +116,7 @@ class TestAddress < Minitest::Test
   end
 
   def test_srs
-    ea= "first.LAST+tag@gmail.com"
+    ea = "first.LAST+tag@gmail.com"
     e = EmailAddress.new(ea)
     s = e.srs("example.com")
     assert s.match(EmailAddress::Address::SRS_FORMAT_REGEX)
@@ -126,20 +125,20 @@ class TestAddress < Minitest::Test
 
   # Quick Regression tests for addresses that should have been valid (but fixed)
   def test_issues
-    assert true, EmailAddress.valid?('test@jiff.com', dns_lookup: :mx) # #7
+    assert true, EmailAddress.valid?("test@jiff.com", dns_lookup: :mx) # #7
     assert true, EmailAddress.valid?("w.-asdf-_@hotmail.com") # #8
     assert true, EmailAddress.valid?("first_last@hotmail.com") # #8
   end
 
   def test_issue9
-    assert ! EmailAddress.valid?('example.user@foo.')
-    assert ! EmailAddress.valid?('ogog@sss.c')
-    assert ! EmailAddress.valid?('example.user@foo.com/')
+    assert !EmailAddress.valid?("example.user@foo.")
+    assert !EmailAddress.valid?("ogog@sss.c")
+    assert !EmailAddress.valid?("example.user@foo.com/")
   end
 
   def test_relaxed_normal
-    assert ! EmailAddress.new('a.c.m.e.-industries@foo.com').valid?
-    assert true, EmailAddress.new('a.c.m.e.-industries@foo.com', local_format: :relaxed).valid?
+    assert !EmailAddress.new("a.c.m.e.-industries@foo.com").valid?
+    assert true, EmailAddress.new("a.c.m.e.-industries@foo.com", local_format: :relaxed).valid?
   end
 
   def test_nil_address

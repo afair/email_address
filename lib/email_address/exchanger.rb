@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "resolv"
-require "netaddr"
 require "socket"
 
 module EmailAddress
@@ -58,8 +57,8 @@ module EmailAddress
 
         ress = begin
           dns.getresources(@host, Resolv::DNS::Resource::IN::MX)
-               rescue Resolv::ResolvTimeout
-                 []
+        rescue Resolv::ResolvTimeout
+          []
         end
 
         records = ress.map { |r|
@@ -105,22 +104,9 @@ module EmailAddress
 
     # Given a cidr (ip/bits) and ip address, returns true on match. Caches cidr object.
     def in_cidr?(cidr)
-      if cidr.include?(":")
-        c = NetAddr::IPv6Net.parse(cidr)
-        return true if mx_ips.find do |ip|
-          next unless ip.include?(":")
-          rel = c.rel NetAddr::IPv6Net.parse(ip)
-          !rel.nil? && rel >= 0
-        end
-      elsif cidr.include?(".")
-        c = NetAddr::IPv4Net.parse(cidr)
-        return true if mx_ips.find do |ip|
-          next if ip.include?(":")
-          rel = c.rel NetAddr::IPv4Net.parse(ip)
-          !rel.nil? && rel >= 0
-        end
-      end
-      false
+      net = IPAddr.new(cidr)
+      found = mx_ips.detect { |ip| net.include?(IPAddr.new(ip)) }
+      !!found
     end
   end
 end
