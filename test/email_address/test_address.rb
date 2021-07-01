@@ -37,6 +37,26 @@ class TestAddress < Minitest::Test
     assert_equal "6bdd00c53645790ad9bbcb50caa93880",  EmailAddress.reference("Gmail.User+tag@gmail.com")
   end
 
+  def test_sha1
+    a = EmailAddress.new("User+tag@example.com")
+    assert_equal "63a710569261a24b3766275b7000ce8d7b32e2f7", a.sha1
+  end
+
+  def test_sha1_with_secret
+    a = EmailAddress.new("User+tag@example.com", sha1_secret: 'test-secret')
+    assert_equal "122df4ec3ce7121db6edc06a9e29eab39a7e8007", a.sha1
+  end
+
+  def test_sha256
+    a = EmailAddress.new("User+tag@example.com")
+    assert_equal "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514", a.sha256
+  end
+
+  def test_sha256_with_secret
+    a = EmailAddress.new("User+tag@example.com", sha256_secret: 'test-secret')
+    assert_equal "480899ff53ccd446cc123f0c5685869644af445e788f1b559054919674307a07", a.sha256
+  end
+
   def test_google_hosted
     a = EmailAddress.new("Ex.am.ple+tag@boomer.com")
     assert_equal a.canonical, "ex.am.ple@boomer.com"

@@ -17,6 +17,11 @@ module EmailAddress
   #   the SHA1 Digest, making it unique to your application so it can't easily be
   #   discovered by comparing against a known list of email/sha1 pairs.
   #
+  # * sha256_secret         ""
+  #   This application-level secret is appended to the email_address to compute
+  #   the SHA256 Digest, making it unique to your application so it can't easily be
+  #   discovered by comparing against a known list of email/sha256 pairs.
+  #
   # For local part configuration:
   # * local_downcase:     true
   #   Downcase the local part. You probably want this for uniqueness.
@@ -104,6 +109,7 @@ module EmailAddress
       dns_lookup: :mx, # :mx, :a, :off
       dns_timeout: nil,
       sha1_secret: "",
+      sha256_secret: "",
       munge_string: "*****",
 
       local_downcase: true,
