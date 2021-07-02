@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler" # ,      "~> 1.16.0"
   if RUBY_PLATFORM == "java"
     spec.add_development_dependency "activerecord", "~> 5.2.6"
-    spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", "~> 1.3.24"
+    spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", "~> 52.7"
   else
     spec.add_development_dependency "activerecord", "~> 6.1.4"
     spec.add_development_dependency "sqlite3"
