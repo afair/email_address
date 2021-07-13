@@ -188,7 +188,7 @@ module EmailAddress
     end
 
     def self.error_message(name, locale = "en")
-      @errors[locale]["email_address"][name.to_s] || name.to_s
+      @errors[locale]&.dig("email_address")&.dig(name.to_s) || name.to_s
     end
 
     # Customize your own error message text.
