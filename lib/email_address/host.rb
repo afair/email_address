@@ -402,11 +402,7 @@ module EmailAddress
     # True if the host name has a DNS A Record
     def valid_dns?
       return true unless dns_enabled?
-      bool = dns_a_record.size > 0 || set_error(:domain_unknown)
-      if localhost? && !@config[:host_local]
-        bool = set_error(:domain_no_localhost)
-      end
-      bool
+      dns_a_record.size > 0 || set_error(:domain_unknown)
     end
 
     # True if the host name has valid MX servers configured in DNS
@@ -430,7 +426,9 @@ module EmailAddress
     # True if the host_name passes Regular Expression match and size limits.
     def valid_format?
       if host_name =~ CANONICAL_HOST_REGEX && to_s.size <= MAX_HOST_LENGTH
-        return true if localhost?
+        if localhost?
+          return @config[:host_local] ? true : set_error(:domain_no_localhost)
+        end
         return true if host_name.include?(".") # require FQDN
       end
       set_error(:domain_invalid)
