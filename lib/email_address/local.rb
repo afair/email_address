@@ -351,8 +351,10 @@ module EmailAddress
       valid_size? or return false
       valid_encoding? or return false
       if tag
-        return false unless mailbox =~ RELAXED_MAILBOX_REGEX &&
-          tag =~ RELAXED_TAG_REGEX
+        return false unless RELAXED_MAILBOX_REGEX.match?(mailbox) &&
+          RELAXED_TAG_REGEX.match?(tag)
+        self.syntax = :relaxed
+        true
       elsif RELAXED_MAILBOX_REGEX.match?(local)
         self.syntax = :relaxed
         true

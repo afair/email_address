@@ -105,4 +105,8 @@ class TestLocal < MiniTest::Test
   def test_tag_punctuation
     assert EmailAddress.valid?("first.last+foo.bar@gmail.com")
   end
+
+  def test_relaxed_tag
+    assert EmailAddress.valid? "foo+abc@example.com", host_validation: :syntax, local_format: :relaxed
+  end
 end
