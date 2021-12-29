@@ -27,11 +27,11 @@ Gem::Specification.new do |spec|
   else
     spec.add_development_dependency "activerecord", "~> 6.1.4"
     spec.add_development_dependency "sqlite3"
+    spec.add_development_dependency "standard", "~> 1.5.0"
   end
-  spec.add_development_dependency "net-smtp"
+  # spec.add_development_dependency "net-smtp"
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
-  spec.add_development_dependency "standard", "~> 1.1.1"
 
   spec.add_dependency "simpleidn"
 end
