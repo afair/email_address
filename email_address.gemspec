@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
     spec.add_development_dependency "activerecord", "~> 6.1.4"
     spec.add_development_dependency "sqlite3"
   end
+  spec.add_development_dependency "net-smtp"
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "standard", "~> 1.1.1"

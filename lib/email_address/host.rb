@@ -1,6 +1,5 @@
 require "simpleidn"
 require "resolv"
-require "net/smtp"
 
 module EmailAddress
   ##############################################################################
@@ -460,6 +459,10 @@ module EmailAddress
     # Connects to host to test it can receive email. This should NOT be performed
     # as an email address check, but is provided to assist in problem resolution.
     # If you abuse this, you *could* be blocked by the ESP.
+    #
+    # NOTE: As of Ruby 3.1, Net::SMTP was moved from the standard library to the
+    # 'net-smtp' gem. In order to avoid adding that dependency for this experimental
+    # feature, please add the gem to your Gemfile and require it to use this feature.
     def connect
       smtp = Net::SMTP.new(host_name || ip_address)
       smtp.start(@config[:helo_name] || "localhost")
