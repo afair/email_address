@@ -183,7 +183,7 @@ module EmailAddress
     def fully_qualified_domain_name(host_part)
       dn = @config[:address_fqdn_domain]
       if !dn
-        if (host_part.nil? || host_part <= " ") && @config[:host_local]
+        if (host_part.nil? || host_part <= " ") && @config[:host_local] && @config[:host_auto_append]
           "localhost"
         else
           host_part
@@ -428,6 +428,8 @@ module EmailAddress
         if localhost?
           return @config[:host_local] ? true : set_error(:domain_no_localhost)
         end
+
+        return true if !@config[:host_fqdn]
         return true if host_name.include?(".") # require FQDN
       end
       set_error(:domain_invalid)

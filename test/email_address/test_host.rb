@@ -68,6 +68,21 @@ class TestHost < MiniTest::Test
     assert_equal true, h.valid?
   end
 
+  def test_localhost
+    h = EmailAddress::Host.new("localhost", host_local: true, host_validation: :syntax)
+    assert_equal true, h.valid?
+  end
+
+  def test_host_no_dot
+    h = EmailAddress::Host.new("local", host_validation: :syntax)
+    assert_equal false, h.valid?
+  end
+
+  def test_host_no_dot_enable_fqdn
+    h = EmailAddress::Host.new("local", host_fqdn: false, host_validation: :syntax)
+    assert_equal true, h.valid?
+  end
+
   def test_comment
     h = EmailAddress::Host.new("(oops)gmail.com")
     assert_equal "gmail.com", h.to_s

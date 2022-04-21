@@ -81,6 +81,12 @@ module EmailAddress
   # * host_local:         false,
   #   Allow localhost, no domain, or local subdomains.
   #
+  # * host_fqdn:          true
+  #   Check if host name is FQDN
+  #
+  # * host_auto_append:   true
+  #   Append localhost if host is missing
+  #
   # * address_validation: :parts, :smtp, ->(address) { true }
   #   Address validation policy
   #   :parts              Validate local and host.
@@ -129,6 +135,8 @@ module EmailAddress
       host_allow_ip: false,
       host_remove_spaces: false,
       host_local: false,
+      host_fqdn: true,
+      host_auto_append: true,
 
       address_validation: :parts, # :parts, :smtp, Proc
       address_size: 3..254,
