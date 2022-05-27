@@ -150,4 +150,8 @@ class TestHost < MiniTest::Test
     assert_equal EmailAddress::Host.new("[127.0.0.666]", host_allow_ip: true).error, "This is not a valid IPv4 address"
     assert_equal EmailAddress::Host.new("[IPv6::12t]", host_allow_ip: true).error, "This is not a valid IPv6 address"
   end
+
+  def test_host_size
+    assert !EmailAddress::Host.new("stackoverflow.com", {host_size: 1..3}).valid?
+  end
 end

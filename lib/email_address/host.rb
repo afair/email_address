@@ -383,6 +383,9 @@ module EmailAddress
       host_validation = rules[:host_validation] || @config[:host_validation] || :mx
       dns_lookup = rules[:dns_lookup] || host_validation
       self.error_message = nil
+      if host_name && !host_name.empty? && !@config[:host_size].include?(host_name.size)
+        return set_error(:invalid_host)
+      end
       if ip_address
         valid_ip?
       elsif !valid_format?
