@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
     spec.add_development_dependency "sqlite3"
     spec.add_development_dependency "standard", "~> 1.5.0"
   end
-  # spec.add_development_dependency "net-smtp"
+  spec.add_development_dependency "net-smtp"
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
 

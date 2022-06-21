@@ -552,7 +552,9 @@ For the mailbox (AKA account, role), without the tag
   :mx                 Ensure host is configured with DNS MX records
   :a                  Ensure host is known to DNS (A Record)
   :syntax             Validate by syntax only, no Network verification
-  :connect            Attempt host connection (Dangerous: Do not use)
+  :connect            Attempt host connection (Experimental and Dangerous: Do not use)
+                      The :host_timeout setting is the maximum number
+                      of seconds to wait during the :connect validation
 
 * host_size:          1..253,
   A range specifying the size limit of the host part,

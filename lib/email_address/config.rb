@@ -137,6 +137,7 @@ module EmailAddress
       host_local: false,
       host_fqdn: true,
       host_auto_append: true,
+      host_timeout: 3,
 
       address_validation: :parts, # :parts, :smtp, Proc
       address_size: 3..254,

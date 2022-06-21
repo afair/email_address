@@ -465,11 +465,15 @@ module EmailAddress
     # as an email address check, but is provided to assist in problem resolution.
     # If you abuse this, you *could* be blocked by the ESP.
     #
-    # NOTE: As of Ruby 3.1, Net::SMTP was moved from the standard library to the
-    # 'net-smtp' gem. In order to avoid adding that dependency for this experimental
-    # feature, please add the gem to your Gemfile and require it to use this feature.
-    def connect
+    # timeout is the number of seconds to wait before timing out the request and
+    # returns false as the connection was unsuccessful.
+    #
+    # > NOTE: As of Ruby 3.1, Net::SMTP was moved from the standard library to the
+    # > 'net-smtp' gem. In order to avoid adding that dependency for this *experimental*
+    # > feature, please add the gem to your Gemfile and require it to use this feature.
+    def connect(timeout = nil)
       smtp = Net::SMTP.new(host_name || ip_address)
+      smtp.open_timeout = timeout || @config[:host_timeout]
       smtp.start(@config[:helo_name] || "localhost")
       smtp.finish
       true
@@ -477,10 +481,10 @@ module EmailAddress
       set_error(:server_not_available, e.to_s)
     rescue SocketError => e
       set_error(:server_not_available, e.to_s)
+    rescue Net::OpenTimeout => e
+      set_error(:server_not_available, e.to_s)
     ensure
-      if smtp&.started?
-        smtp.finish
-      end
+      smtp.finish if smtp&.started?
     end
 
     def set_error(err, reason = nil)
