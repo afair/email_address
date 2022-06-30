@@ -92,7 +92,7 @@ class TestLocal < MiniTest::Test
 
   def test_hosted
     assert EmailAddress.valid?("x@exposure.co")
-    assert EmailAddress.error("xxxx+subscriber@gmail.com")
+    assert EmailAddress.error("xx+subscriber@gmail.com")
     assert EmailAddress.valid?("xxxxx+subscriber@gmail.com")
   end
 

@@ -127,7 +127,7 @@ class TestHost < MiniTest::Test
   def test_hosted_service
     # Is there a gmail-hosted domain that will continue to exist? Removing until then
     # assert EmailAddress.valid?("test@jiff.com", dns_lookup: :mx)
-    assert !EmailAddress.valid?("test@gmail.com", dns_lookup: :mx)
+    assert !EmailAddress.valid?("t@gmail.com", dns_lookup: :mx)
   end
 
   def test_yahoo_bad_tld
