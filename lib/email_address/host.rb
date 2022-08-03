@@ -381,7 +381,7 @@ module EmailAddress
     # Returns true if the host name is valid according to the current configuration
     def valid?(rules = {})
       host_validation = rules[:host_validation] || @config[:host_validation] || :mx
-      dns_lookup = rules[:dns_lookup] || host_validation
+      dns_lookup = rules[:dns_lookup] || @config[:dns_lookup] || host_validation
       self.error_message = nil
       if host_name && !host_name.empty? && !@config[:host_size].include?(host_name.size)
         return set_error(:invalid_host)
@@ -392,10 +392,10 @@ module EmailAddress
         false
       elsif dns_lookup == :connect
         valid_mx? && connect
+      elsif dns_lookup == :a || host_validation == :a
+        valid_dns?
       elsif dns_lookup == :mx
         valid_mx?
-      elsif dns_lookup == :a
-        valid_dns?
       else
         true
       end

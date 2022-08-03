@@ -154,4 +154,11 @@ class TestHost < MiniTest::Test
   def test_host_size
     assert !EmailAddress::Host.new("stackoverflow.com", {host_size: 1..3}).valid?
   end
+
+  # When a domain is not configured to receive email (missing MX record),
+  # Though some MTA's will fallback to the A/AAAA host record
+  def test_no_mx
+    assert !EmailAddress::Host.new("zaboz.com").valid?
+    assert EmailAddress::Host.new("zaboz.com", dns_lookup: :a).valid?
+  end
 end
