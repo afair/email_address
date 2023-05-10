@@ -48,10 +48,13 @@ class User < ApplicationRecord
   if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
     attribute :email, :email_address
     attribute :canonical_email, :canonical_email_address
+    attribute :alternate_email, :email_address
   end
 
   validates_with EmailAddress::ActiveRecordValidator,
     fields: %i[email canonical_email]
+  validates_with EmailAddress::ActiveRecordValidator,
+    field: :alternate_email, code: :some_error_code, message: "Check your email"
 
   def email=(email_address)
     self[:canonical_email] = email_address

@@ -12,7 +12,11 @@ module EmailAddress
   # * field: email,
   # * fields: [:email1, :email2]
   #
+  # * code: custom error code (default: :invalid_address)
+  # * message: custom error message (default: "Invalid Email Address")
+  #
   # Default field: :email or :email_address (first found)
+  #
   #
   class ActiveRecordValidator < ActiveModel::Validator
     def initialize(options = {})
@@ -35,10 +39,11 @@ module EmailAddress
       return if r[f].nil?
       e = Address.new(r[f])
       unless e.valid?
+        error_code = @opt[:code] || :invalid_address
         error_message = @opt[:message] ||
           Config.error_message(:invalid_address, I18n.locale.to_s) ||
           "Invalid Email Address"
-        r.errors.add(f, error_message)
+        r.errors.add(f, error_code, message: error_message)
       end
     end
   end
