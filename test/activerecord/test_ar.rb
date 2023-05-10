@@ -9,8 +9,18 @@ class TestAR < MiniTest::Test
       user = User.new(email: "Pat.Jones+ASDF#GMAIL.com")
       assert_equal false, user.valid?
       assert user.errors.messages[:email].first
+
       user = User.new(email: "Pat.Jones+ASDF@GMAIL.com")
       assert_equal true, user.valid?
+    end
+  end
+
+  def test_validation_error_message
+    if RUBY_PLATFORM != "java" # jruby
+      user = User.new(alternate_email: "Pat.Jones+ASDF#GMAIL.com")
+      assert_equal false, user.valid?
+      assert user.errors.messages[:alternate_email].first.include?("Check your email")
+      assert_equal :some_error_code, user.errors.details[:alternate_email].first[:error]
     end
   end
 
