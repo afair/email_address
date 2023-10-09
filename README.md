@@ -241,7 +241,7 @@ email.provider      #=> :google
 email.mailbox       #=> "clark.kent"
 email.tag           #=> "scoops"
 
-email.host.exchanger.first[:ip] #=> "2a00:1450:400b:c02::1a"
+email.host.exchangers.first[:ip] #=> "2a00:1450:400b:c02::1a"
 email.host.txt_hash #=> {:v=>"spf1", :redirect=>"\_spf.google.com"}
 
 EmailAddress.normal("HIRO@こんにちは世界.com")
