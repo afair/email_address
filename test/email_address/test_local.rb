@@ -109,4 +109,8 @@ class TestLocal < MiniTest::Test
   def test_relaxed_tag
     assert EmailAddress.valid? "foo+abc@example.com", host_validation: :syntax, local_format: :relaxed
   end
+
+  def test_phone_mailbox
+    assert EmailAddress::Local.new("+3701234", local_format: :standard).valid?
+  end
 end
