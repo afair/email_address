@@ -116,7 +116,7 @@ module EmailAddress
 
     def local=(raw)
       self.original = raw
-      raw.downcase! if @config[:local_downcase].nil? || @config[:local_downcase]
+      raw = raw.downcase if @config[:local_downcase].nil? || @config[:local_downcase]
       @local = raw
 
       if @config[:local_parse].is_a?(Proc)
