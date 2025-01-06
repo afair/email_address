@@ -52,7 +52,7 @@ class TestHost < MiniTest::Test
   def test_dmarc
     d = EmailAddress::Host.new("yahoo.com").dmarc
     assert_equal "reject", d[:p]
-    d = EmailAddress::Host.new("example.com").dmarc
+    d = EmailAddress::Host.new("calculator.net").dmarc
     assert_equal true, d.empty?
   end
 
