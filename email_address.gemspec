@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
     spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", "~> 52.7"
   else
     spec.add_development_dependency "activerecord", "~> 6.1.4"
-    spec.add_development_dependency "sqlite3"
+    spec.add_development_dependency "sqlite3", "~> 1.3"
     spec.add_development_dependency "standard", "~> 1.5.0"
   end
   spec.add_development_dependency "net-smtp"
