@@ -25,15 +25,16 @@ Gem::Specification.new do |spec|
     spec.add_development_dependency "activerecord", "~> 5.2.6"
     spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", "~> 52.7"
   else
-    spec.add_development_dependency "activerecord", "~> 6.1.4"
+    spec.add_development_dependency "activerecord", "~> 8.0.0"
     spec.add_development_dependency "sqlite3", "~> 1.3"
-    spec.add_development_dependency "standard", "~> 1.5.0"
+    spec.add_development_dependency "standard"
   end
   spec.add_development_dependency "net-smtp"
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "bigdecimal"
   spec.add_development_dependency "mutex_m"
+  spec.add_development_dependency "irb"
 
   spec.add_dependency "base64"
   spec.add_dependency "simpleidn"
