@@ -32,6 +32,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "net-smtp"
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "pry"
+  spec.add_development_dependency "bigdecimal"
+  spec.add_development_dependency "mutex_m"
 
+  spec.add_dependency "base64"
   spec.add_dependency "simpleidn"
 end
