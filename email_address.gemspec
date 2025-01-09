@@ -15,18 +15,17 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 2.5", "< 4"
   spec.files = `git ls-files`.split($/)
   spec.executables = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "rake"
   spec.add_development_dependency "minitest", "~> 5.11"
   spec.add_development_dependency "bundler" # ,      "~> 1.16.0"
   if RUBY_PLATFORM == "java"
-    spec.add_development_dependency "activerecord", "~> 5.2.6"
-    spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", "~> 52.7"
+    spec.add_development_dependency "activerecord", "~> 7.2.0"
+    spec.add_development_dependency "activerecord-jdbcsqlite3-adapter", "~> 70.2"
   else
     spec.add_development_dependency "activerecord", "~> 8.0.0"
-    spec.add_development_dependency "sqlite3", "~> 1.3"
+    spec.add_development_dependency "sqlite3", "~> 2.1"
     spec.add_development_dependency "standard"
   end
   spec.add_development_dependency "net-smtp"
