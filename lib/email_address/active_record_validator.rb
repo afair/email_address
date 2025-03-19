@@ -28,16 +28,16 @@ module EmailAddress
         @opt[:fields].each { |f| validate_email(r, f) }
       elsif @opt[:field]
         validate_email(r, @opt[:field])
-      elsif r.respond_to? :email
-        validate_email(r, :email)
-      elsif r.respond_to? :email_address
-        validate_email(r, :email_address)
+      else
+        validate_email(r, :email) || validate_email(r, :email_address)
       end
     end
 
     def validate_email(r, f)
-      return if r[f].nil?
-      e = Address.new(r[f])
+      v = field_value(r, f)
+      return if v.nil?
+
+      e = Address.new(v)
       unless e.valid?
         error_code = @opt[:code] || :invalid_address
         error_message = @opt[:message] ||
@@ -45,6 +45,18 @@ module EmailAddress
           "Invalid Email Address"
         r.errors.add(f, error_code, message: error_message)
       end
+    end
+
+    def field_value(r, f)
+      if r.respond_to?(f)
+        r.send(f)
+      elsif r[f]
+        r[f]
+      else
+        nil
+      end
+    rescue NoMethodError
+      nil
     end
   end
 end
