@@ -45,6 +45,8 @@ end
 ################################################################################
 
 class User < ApplicationRecord
+  store :settings, accessors: [ :support_email ], coder: JSON
+
   if defined?(ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5
     attribute :email, :email_address
     attribute :canonical_email, :canonical_email_address
@@ -52,7 +54,7 @@ class User < ApplicationRecord
   end
 
   validates_with EmailAddress::ActiveRecordValidator,
-    fields: %i[email canonical_email]
+    fields: %i[email canonical_email support_email]
   validates_with EmailAddress::ActiveRecordValidator,
     field: :alternate_email, code: :some_error_code, message: "Check your email"
 

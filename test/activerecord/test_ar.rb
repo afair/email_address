@@ -34,4 +34,14 @@ class TestAR < MiniTest::Test
       end
     end
   end
+
+  def test_store_accessor_valid_email
+    user = User.new(support_email: "test@gmail.com")
+    assert user.valid?
+  end
+
+  def test_store_accessor_invalid_email
+    user = User.new(support_email: "this_is_not_an_email")
+    assert_equal false, user.valid?
+  end
 end
