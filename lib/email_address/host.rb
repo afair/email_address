@@ -36,7 +36,7 @@ module EmailAddress
     MAX_HOST_LENGTH = 255
 
     # Sometimes, you just need a Regexp...
-    DNS_HOST_REGEX = / [\p{L}\p{N}]+ (?: (?: -{1,2} | \.) [\p{L}\p{N}]+ )*/x
+    DNS_HOST_REGEX = / [\p{L}\p{N}]+ (?: (?: -{1,3} | \.) [\p{L}\p{N}]+ )*/x
 
     # The IPv4 and IPv6 were lifted from Resolv::IPv?::Regex and tweaked to not
     # \A...\z anchor at the edges.

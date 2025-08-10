@@ -161,4 +161,9 @@ class TestHost < MiniTest::Test
     assert !EmailAddress::Host.new("zaboz.com").valid?
     assert EmailAddress::Host.new("zaboz.com", dns_lookup: :a).valid?
   end
+
+  # Issue #102 off---white.com should be valid 
+  def test_triple_dash_domain 
+    assert EmailAddress::Host.new("off---white.com").valid?
+  end
 end
