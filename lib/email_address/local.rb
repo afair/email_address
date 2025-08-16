@@ -158,6 +158,9 @@ module EmailAddress
 
     def parse_tag(raw)
       separator = @config[:tag_separator] ||= "+"
+
+      return raw if raw.start_with? separator
+
       raw.split(separator, 2)
     end
 
