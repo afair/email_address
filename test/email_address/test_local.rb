@@ -51,7 +51,7 @@ class TestLocal < MiniTest::Test
   end
 
   def test_valid_conventional
-    %w[first.last first First+Tag o'brien].each do |local|
+    %w[first.last first First+Tag o'brien j.d.-doe].each do |local|
       assert EmailAddress::Local.new(local).conventional?, local
     end
   end

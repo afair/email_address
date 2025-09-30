@@ -82,8 +82,8 @@ module EmailAddress
     STANDARD_MAX_SIZE = 64
 
     # Conventional : word([.-+'_]word)*
-    CONVENTIONAL_MAILBOX_REGEX = /\A [\p{L}\p{N}_]+ (?: [.\-+'_] [\p{L}\p{N}_]+ )* \z/x
-    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [.\-+'_] [\p{L}\p{N}_]+ )*/x
+    CONVENTIONAL_MAILBOX_REGEX = /\A [\p{L}\p{N}_]+ (?: [.\-+'_]+ [\p{L}\p{N}_]+ )* \z/x
+    CONVENTIONAL_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [.\-+'_]+ [\p{L}\p{N}_]+ )*/x
 
     # Relaxed: same characters, relaxed order
     RELAXED_MAILBOX_WITHIN = /[\p{L}\p{N}_]+ (?: [.\-+'_]+ [\p{L}\p{N}_]+ )*/x
