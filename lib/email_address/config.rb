@@ -112,7 +112,7 @@ module EmailAddress
 
   class Config
     @config = {
-      dns_lookup: :mx, # :mx, :a, :off
+      dns_lookup: :a, # :mx, :a, :off
       dns_timeout: nil,
       sha1_secret: "",
       sha256_secret: "",
@@ -159,7 +159,7 @@ module EmailAddress
       msn: {
         host_match: %w[msn. hotmail. outlook. live.],
         exchanger_match: %w[outlook.com],
-        mailbox_validator: ->(m, t) { m =~ /\A\w[\-\w]*(?:\.[\-\w]+)*\z/i }
+        mailbox_validator: ->(m, t) { m =~ /\A\w[-\w]*(?:\.[-\w]+)*\z/i }
       },
       yahoo: {
         host_match: %w[yahoo. ymail. rocketmail.],
