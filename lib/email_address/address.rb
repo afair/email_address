@@ -38,7 +38,7 @@ module EmailAddress
 
     # Given an email address, this returns an array of [local, host] parts
     def self.split_local_host(email)
-      if (lh = email.match(/(.+)@(.+)/))
+      if (lh = email.match(/\A(.+)@(.+)\z/))
         lh.to_a[1, 2]
       else
         [email, ""]
