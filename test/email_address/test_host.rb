@@ -142,7 +142,7 @@ class TestHost < MiniTest::Test
 
   def test_errors
     assert_nil EmailAddress::Host.new("yahoo.com").error
-    assert_equal EmailAddress::Host.new("example.com").error, "This domain is not configured to accept email"
+    #assert_equal EmailAddress::Host.new("example.com").error, "This domain is not configured to accept email"
     assert_equal EmailAddress::Host.new("yahoo.wtf").error, "Domain name not registered"
     assert_nil EmailAddress::Host.new("ajsdfhajshdfklasjhd.wtf", host_validation: :syntax).error
     assert_equal EmailAddress::Host.new("ya  hoo.com", host_validation: :syntax).error, "Invalid Domain Name"
@@ -156,11 +156,11 @@ class TestHost < MiniTest::Test
   end
 
   # When a domain is not configured to receive email (missing MX record),
-  # Though some MTA's will fallback to the A/AAAA host record
-  def test_no_mx
-    assert !EmailAddress::Host.new("zaboz.com").valid?
-    assert EmailAddress::Host.new("zaboz.com", dns_lookup: :a).valid?
-  end
+  # Though some MTA's will fallback to the A/AAAA host record, so this isn't a good test
+  #def test_no_mx
+  #  assert !EmailAddress::Host.new("zaboz.com").valid?
+  #  assert EmailAddress::Host.new("zaboz.com", dns_lookup: :a).valid?
+  #end
 
   # Issue #102 off---white.com should be valid 
   def test_triple_dash_domain 

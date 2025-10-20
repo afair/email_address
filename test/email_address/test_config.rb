@@ -2,19 +2,19 @@ require_relative "../test_helper"
 
 class TestConfig < MiniTest::Test
   def test_setting
-    assert_equal :mx, EmailAddress::Config.setting(:dns_lookup)
+    assert_equal :a, EmailAddress::Config.setting(:dns_lookup)
     assert_equal :off, EmailAddress::Config.setting(:dns_lookup, :off)
     assert_equal :off, EmailAddress::Config.setting(:dns_lookup)
-    EmailAddress::Config.setting(:dns_lookup, :mx)
+    EmailAddress::Config.setting(:dns_lookup, :a)
   end
 
   def test_configure
-    assert_equal :mx, EmailAddress::Config.setting(:dns_lookup)
+    assert_equal :a, EmailAddress::Config.setting(:dns_lookup)
     assert_equal true, EmailAddress::Config.setting(:local_downcase)
     EmailAddress::Config.configure(local_downcase: false, dns_lookup: :off)
     assert_equal :off, EmailAddress::Config.setting(:dns_lookup)
     assert_equal false, EmailAddress::Config.setting(:local_downcase)
-    EmailAddress::Config.configure(local_downcase: true, dns_lookup: :mx)
+    EmailAddress::Config.configure(local_downcase: true, dns_lookup: :a)
   end
 
   def test_provider
