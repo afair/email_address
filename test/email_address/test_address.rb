@@ -151,4 +151,11 @@ class TestAddress < Minitest::Test
   def test_nonstandard_tag
     # assert EmailAddress.valid?("asdfas+-@icloud.com")
   end
+
+  def test_newline_characters
+    assert !EmailAddress.valid?("user@foo.com\nother@bar.com")
+    assert !EmailAddress.valid?("user@foo.com\r\nother@bar.com")
+    assert EmailAddress.valid?("\nuser@foo.com") # valid because strip processing removes \n
+    assert EmailAddress.valid?("user@foo.com\r\n") # valid because strip processing removes \n
+  end
 end
