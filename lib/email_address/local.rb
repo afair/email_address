@@ -101,10 +101,10 @@ module EmailAddress
 
     REDACTED_REGEX = /\A \{ [0-9a-f]{40} \} \z/x # {sha1}
 
-    CONVENTIONAL_TAG_REGEX = #  AZaz09_!'+-/=
-      %r{^([\w!'+\-/=.]+)$}i
-    RELAXED_TAG_REGEX = #  AZaz09_!#$%&'*+-/=?^`{|}~
-      %r/^([\w.!\#$%&'*+\-\/=?\^`{|}~]+)$/i
+    # Conventional Tag: word ([,-+'='] word)...
+    CONVENTIONAL_TAG_REGEX = /\A [\p{L}\p{N}_]+ (?: [.\-+'=] [\p{L}\p{N}_]+ )* \z/x # word(<punctuation>word)*...
+    # Relexed Tag: token ( . token)... token is most punctuation, but not: . \ " space
+    RELAXED_TAG_REGEX = %r/^[\w!\#$%&'*+\-\/=?\^`{|}~]+ (\.[\w!\#$%&'*+\-\/=?\^`{|}~])* $/ix
 
     def initialize(local, config = {}, host = nil, locale = "en")
       @config = config.is_a?(Hash) ? Config.new(config) : config
@@ -333,14 +333,11 @@ module EmailAddress
     # True if the part matches the conventional format
     def conventional?
       self.syntax = :invalid
-      if tag
-        return false unless mailbox =~ CONVENTIONAL_MAILBOX_REGEX &&
-          tag =~ CONVENTIONAL_TAG_REGEX
-      else
-        return false unless CONVENTIONAL_MAILBOX_REGEX.match?(local)
-      end
-      valid_size? or return false
-      valid_encoding? or return false
+      return false if tag && tag !~ CONVENTIONAL_TAG_REGEX
+      return false unless mailbox =~ CONVENTIONAL_MAILBOX_REGEX
+      return false if comment
+      return false unless valid_size?
+      return false unless valid_encoding?
       self.syntax = :conventional
       true
     end
@@ -348,32 +345,23 @@ module EmailAddress
     # Relaxed conventional is not so strict about character order.
     def relaxed?
       self.syntax = :invalid
-      valid_size? or return false
-      valid_encoding? or return false
-      if tag
-        return false unless RELAXED_MAILBOX_REGEX.match?(mailbox) &&
-          RELAXED_TAG_REGEX.match?(tag)
-        self.syntax = :relaxed
-        true
-      elsif RELAXED_MAILBOX_REGEX.match?(local)
-        self.syntax = :relaxed
-        true
-      else
-        false
-      end
+      return false if tag && tag !~ RELAXED_TAG_REGEX
+      return false unless mailbox =~ RELAXED_MAILBOX_REGEX
+      return false if comment
+      return false unless valid_size?
+      return false unless valid_encoding?
+      self.syntax = :relaxed
+      true
     end
 
     # True if the part matches the RFC standard format
     def standard?
       self.syntax = :invalid
-      valid_size? or return false
-      valid_encoding? or return false
-      if STANDARD_LOCAL_REGEX.match?(local)
-        self.syntax = :standard
-        true
-      else
-        false
-      end
+      return false unless STANDARD_LOCAL_REGEX.match?(local)
+      return false unless valid_size?
+      return false unless valid_encoding?
+      self.syntax = :standard
+      true
     end
 
     # Matches configured formated form against File glob strings given.

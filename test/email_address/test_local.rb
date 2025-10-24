@@ -63,13 +63,13 @@ class TestLocal < MiniTest::Test
   end
 
   def test_valid
-    assert_equal false, EmailAddress::Local.new("first(comment)", local_format: :conventional).valid?
-    assert_equal true, EmailAddress::Local.new("first(comment)", local_format: :standard).valid?
+    refute EmailAddress::Local.new("first(comment)", local_format: :conventional).valid?
+    assert EmailAddress::Local.new("first(comment)", local_format: :standard).valid?
   end
 
   def test_format
     assert_equal :conventional, EmailAddress::Local.new("can1").format?
-    assert_equal :standard, EmailAddress::Local.new(%("can1")).format?
+    assert_equal :standard, EmailAddress::Local.new(%("can 1")).format?
     assert_equal "can1", EmailAddress::Local.new(%{"can1(commment)"}).format(:conventional)
   end
 
@@ -108,5 +108,10 @@ class TestLocal < MiniTest::Test
 
   def test_relaxed_tag
     assert EmailAddress.valid? "foo+abc@example.com", host_validation: :syntax, local_format: :relaxed
+  end
+
+  def test_tag_punctuation
+    refute EmailAddress.valid?("name+tag.@domain.com", host_validation: :syntax)
+    assert EmailAddress.valid?("name+tag.-@domain.com", host_validation: :syntax, local_format: :relaxed)
   end
 end
