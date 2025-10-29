@@ -4,28 +4,65 @@
 [![CI Build](https://github.com/afair/email_address/actions/workflows/ci.yml/badge.svg)](https://github.com/afair/email_address/actions/workflows/ci.yml)
 [![Code Climate](https://codeclimate.com/github/afair/email_address/badges/gpa.svg)](https://codeclimate.com/github/afair/email_address)
 
-The `email_address` gem provides a ruby language library for working
-with email addresses.
+The `email_address` ruby gem is an opinionated validation library for
+email addresses. The [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322#section-3.4)
+address specification defines them as extensions to the email
+header syntax, not as a useful method for creating email transport
+systems with user accounts, mailboxes, and routing.
 
-By default, it validates against conventional usage,
-the format preferred for user email addresses.
-It can be configured to validate against RFC "Standard" formats,
-common email service provider formats, and perform DNS validation.
+The library follows "real world" email address patterns for end-user addresses.
 
-Using `email_address` to validate user email addresses results in
-fewer "false positives" due to typing errors and gibberish data.
-It validates syntax more strictly for popular email providers,
-and can deal with gmail's "optional dots" in addresses.
+- "Conventional" format (the default) fits most user email accounts
+  as created by major email service providers and software.
+  Only 7-bit ASCII characters are supported in the local (left) part.
+- "Relaxed" format loosely follows conventional, allowing a looser
+  punctuation format.
+- "Standard" format follows the RFC. This is provided for non-user
+  addresses, such as uniquely-generated destinations for
+  consumption between automated systems.
 
-It provides Active Record (Rails) extensions, including an
-address validator and attributes API custom datatypes.
+RFC "Standard" Addresses allow syntaxes that most developers do not want:
 
-Requires Ruby 2.0 or later.
+- Mailboxes are case-sensitive.
+- Double-quoted tokens can contain spaces, "@" symbols, and unusual punctuation.
+- Parenthetical comment fields can appear at the beginning or end
+  of the local (left) part.
+- Addresses do not have to have fully-qualified domain names
+- The Host part (after the "@") can be an IP Address
+
+Additionally, this library respects "address tags", a convention
+not specified by the RFC, with which email providers and software
+append an identifier or route to the mailbox, usually after a "+" symbol.
+
+Configuration options include specialized address formats for the largest
+ESP (Email service providers) to validate against their formats.
+
+If you have false negatives with "conventional" format, try the
+`local_format: :relaxed` option. To validate to the RFC only, use the
+`local_format: :standard` option. When possible, confirm the address
+with the user if conventional check fails but relaxed succeeds.
+
+Remember: the only true way to validate an email address is to successfully
+send email to it. SMTP checks can help, but should only be done politely
+to avoid blacklisting your application. Several (unaffiliated) services
+exist to do this for you.
+
+Finally, there are conveniences to handle storage and management of
+address digests for PII removal or sharing addresses without revealing them.
+
+The gem requires ruby only, but includes a, optional Ruby on Rails helper for
+those who need to use it with ActiveRecord.
 
 Looking for a Javascript version of this library? Check out the
 [email_address](https://www.npmjs.com/package/email_address) npm module.
 
 ## Quick Start
+
+Install the gem to your project with bundler:
+
+    bundle add email_address
+
+or with the gem command:
 
 To quickly validate email addresses, use the valid? and error helpers.
 `valid?` returns a boolean, and `error` returns nil if valid, otherwise
@@ -38,19 +75,19 @@ EmailAddress.error "allen@bad-d0main.com" #=> "Invalid Host/Domain Name"
 
 `EmailAddress` deeply validates your email addresses. It checks:
 
-* Host name format and DNS setup
-* Mailbox format according to "conventional" form. This matches most used user
+- Host name format and DNS setup
+- Mailbox format according to "conventional" form. This matches most used user
   email accounts, but is a subset of the RFC specification.
 
 It does not check:
 
-* The mail server is configured to accept connections
-* The mailbox is valid and accepts email.
+- The mail server is configured to accept connections
+- The mailbox is valid and accepts email.
 
 By default, MX records are required in DNS. MX or "mail exchanger" records
 tell where to deliver email for the domain. Many domains run their
 website on one provider (ISP, Heroku, etc.), and email on a different
-provider (such as G Suite).  Note that `example.com`, while
+provider (such as G Suite). Note that `example.com`, while
 a valid domain name, does not have MX records.
 
 ```ruby
@@ -71,133 +108,90 @@ The email address specification is complex and often not what you want
 when working with personal email addresses in applications. This library
 introduces terms to distinguish types of email addresses.
 
-* *Normal* - The edited form of any input email address. Typically, it
+- _Normal_ - The edited form of any input email address. Typically, it
   is lower-cased and minor "fixes" can be performed, depending on the
   configurations and email address provider.
 
-    CKENT@DAILYPLANET.NEWS => ckent@dailyplanet.news
+  <CKENT@DAILYPLANET.NEWS> => <ckent@dailyplanet.news>
 
-* *Conventional* - Most personal account addresses are in this basic
+- _Conventional_ - Most personal account addresses are in this basic
   format, one or more "words" separated by a single simple punctuation
   character. It consists of a mailbox (user name or role account) and
   an optional address "tag" assigned by the user.
 
-    miles.o'brien@ncc-1701-d.ufp
+  miles.o'<brien@ncc-1701-d.ufp>
 
-* *Relaxed* - A less strict form of Conventional, same character set,
+- _Relaxed_ - A less strict form of Conventional, same character set,
   must begin and end with an alpha-numeric character, but order within
   is not enforced.
 
-    aasdf-34-.z@example.com
+  <aasdf-34-.z@example.com>
 
-* *Standard* - The RFC-Compliant syntax of an email address. This is
+- _Standard_ - The RFC-Compliant syntax of an email address. This is
   useful when working with software-generated addresses or handling
   existing email addresses, but otherwise not useful for personal
   addresses.
 
-    madness!."()<>[]:,;@\\\"!#$%&'*+-/=?^_`{}| ~.a(comment )"@example.org
+  madness!."()<>[]:,;@\\\"!#$%&'\*+-/=?^\_`{}| ~.a(comment )"@example.org
 
-* *Base* - A unique mailbox without tags. For gmail, is uses the incoming
+- _Base_ - A unique mailbox without tags. For gmail, is uses the incoming
   punctation, essential when building an MD5, SHA1, or SHA256 to match services
   like Gravatar, and email address digest interchange.
 
-* *Canonical* - An unique account address, lower-cased, without the
+- _Canonical_ - An unique account address, lower-cased, without the
   tag, and with irrelevant characters stripped.
 
-    clark.kent+scoops@gmail.com => clarkkent@gmail.com
+  <clark.kent+scoops@gmail.com> => <clarkkent@gmail.com>
 
-* *Reference* - The MD5 of the Base format, used to share account
+- _Reference_ - The MD5 of the Base format, used to share account
   references without exposing the private email address directly.
 
-    Clark.Kent+scoops@gmail.com =>
-    clark.kent@gmail.com => 1429a1dfc797d6e93075fef011c373fb
+  <Clark.Kent+scoops@gmail.com> =>
+  <clark.kent@gmail.com> => 1429a1dfc797d6e93075fef011c373fb
 
-* *Redacted* - A form of the email address where it is replaced by
+- _Redacted_ - A form of the email address where it is replaced by
   a SHA1-based version to remove the original address from the
   database, or to store the address privately, yet still keep it
   accessible at query time by converting the queried address to
   the redacted form.
 
-    Clark.Kent+scoops@gmail.com => {bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com
+  <Clark.Kent+scoops@gmail.com> => {bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com
 
-* *Munged* - An obfuscated version of the email address suitable for
+- _Munged_ - An obfuscated version of the email address suitable for
   publishing on the internet, where email address harvesting
   could occur.
 
-    Clark.Kent+scoops@gmail.com => cl\*\*\*\*\*@gm\*\*\*\*\*
+  <Clark.Kent+scoops@gmail.com> => cl\*\*\*\*\*@gm\*\*\*\*\*
 
 Other terms:
 
-* *Local* - The left-hand side of the "@", representing the user,
+- _Local_ - The left-hand side of the "@", representing the user,
   mailbox, or role, and an optional "tag".
 
-    mailbox+tag@example.com;   Local part: mailbox+tag
+  <mailbox+tag@example.com>; Local part: mailbox+tag
 
-* *Mailbox* - The destination user account or role account.
-* *Tag* - A parameter added after the mailbox, usually after the
+- _Mailbox_ - The destination user account or role account.
+- _Tag_ - A parameter added after the mailbox, usually after the
   "+" symbol, set by the user for mail filtering and sub-accounts.
   Not all mail systems support this.
-* *Host* (sometimes called *Domain*) - The right-hand side of the "@"
+- _Host_ (sometimes called _Domain_) - The right-hand side of the "@"
   indicating the domain or host name server to delivery the email.
   If missing, "localhost" is assumed, or if not a fully-qualified
   domain name, it assumed another computer on the same network, but
   this is increasingly rare.
-* *Provider* - The Email Service Provider (ESP) providing the email
+- _Provider_ - The Email Service Provider (ESP) providing the email
   service. Each provider may have its own email address validation
   and canonicalization rules.
-* *Punycode* - A host name with Unicode characters (International
+- _Punycode_ - A host name with Unicode characters (International
   Domain Name or IDN) needs conversion to this ASCII-encoded format
   for DNS lookup.
 
-    "HIRO@こんにちは世界.com" => "hiro@xn--28j2a3ar1pp75ovm7c.com"
+  "HIRO@こんにちは世界.com" => "<hiro@xn--28j2a3ar1pp75ovm7c.com>"
 
 Wikipedia has a great article on
 [Email Addresses](https://en.wikipedia.org/wiki/Email_address),
 much more readable than the section within
 [RFC 5322](https://tools.ietf.org/html/rfc5322#section-3.4)
-
-## Avoiding the Bad Parts of RFC Specification
-
-Following the RFC specification sounds like a good idea, until you
-learn about all the madness contained therein. This library can
-validate the RFC syntax, but this is never useful, especially when
-validating user email address submissions. By default, it validates
-to the *conventional* format.
-
-Here are a few parts of the RFC specification you should avoid:
-
-* Case-sensitive local parts: `First.Last@example.com`
-* Spaces and Special Characters: `"():;<>@[\\]`
-* Quoting and Escaping Requirements: `"first \"nickname\" last"@example.com`
-* Comment Parts: `(comment)mailbox@example.com`
-* IP and IPv6 addresses as hosts: `mailbox@[127.0.0.1]`
-* Non-ASCII (7-bit) characters in the local part: `Pelé@example.com`
-* Validation by voodoo regular expressions
-* Gmail allows ".." in addresses since they are not meaningful, but
-  the standard does not.
-
-## Installation With Rails or Bundler
-
-If you are using Rails or a project with Bundler, add this line to your application's Gemfile:
-
-    gem 'email_address'
-
-And then execute:
-
-    $ bundle
-
-## Installation Without Bundler
-
-If you are not using Bundler, you need to install the gem yourself.
-
-    $ gem install email_address
-
-Require the gem inside your script.
-
-```ruby
-require 'rubygems'
-require 'email_address'
-```
 
 ## Usage
 
@@ -231,7 +225,7 @@ email.valid?        #=> true
 
 Here are some other methods that are available.
 
-```ruby
+````ruby
 email.redact        #=> "{bea3f3560a757f8142d38d212a931237b218eb5e}@gmail.com"
 email.sha1          #=> "bea3f3560a757f8142d38d212a931237b218eb5e"
 email.sha256        #=> "9e2a0270f2d6778e5f647fc9eaf6992705ca183c23d1ed1166586fd54e859f75"
@@ -248,17 +242,6 @@ EmailAddress.normal("HIRO@こんにちは世界.com")
                     #=> "hiro@xn--28j2a3ar1pp75ovm7c.com"
 EmailAddress.normal("hiro@xn--28j2a3ar1pp75ovm7c.com", host_encoding: :unicode)
                     #=> "hiro@こんにちは世界.com"
-```
-As of release 0.1.17, exchanger_match is no longer used for host provider
-determination, which designated the set of rules for that domain.
-Sometimes, as in Google-hosted domains, the address
-rules are different, notably the optional dots in mailboxes for gmail.com
-accounts do not apply to other private domains hosted at google.
-
-To access the provider service, you can now call:
-
-    EmailAddress.new("user@hosteddomain.com").host.hosted_provider
-
 
 #### Rails Validator
 
@@ -271,7 +254,7 @@ Specify your email address attributes with `field: :user_email`, or
 class User < ActiveRecord::Base
   validates_with EmailAddress::ActiveRecordValidator, field: :email
 end
-```
+````
 
 #### Rails I18n
 
@@ -359,7 +342,7 @@ by the redacted form.
 The only true validation is to send a message to the email address and
 have the user (or process) verify it has been received. Syntax checks
 help prevent erroneous input. Even sent messages can be silently
-dropped, or bounced back after acceptance.  Conditions such as a
+dropped, or bounced back after acceptance. Conditions such as a
 "Mailbox Full" can mean the email address is known, but abandoned.
 
 There are different levels of validations you can perform. By default, it will
@@ -389,14 +372,14 @@ e1 < e2           #=> true  (Compares using normalized address)
 
 Matching addresses by simple patterns:
 
-   * Top-Level-Domain:         .org
-   * Domain Name:              example.com
-   * Registration Name:        hotmail.   (matches any TLD)
-   * Domain Glob:              *.exampl?.com
-   * Provider Name:            google
-   * Mailbox Name or Glob:     user00*@
-   * Address or Glob:          postmaster@domain*.com
-   * Provider or Registration: msn
+- Top-Level-Domain: .org
+- Domain Name: example.com
+- Registration Name: hotmail. (matches any TLD)
+- Domain Glob: \*.exampl?.com
+- Provider Name: google
+- Mailbox Name or Glob: user00\*@
+- Address or Glob: postmaster@domain\*.com
+- Provider or Registration: msn
 
 Usage:
 
@@ -484,124 +467,8 @@ EmailAddress::Config.error_messages({
   not_allowed:        "Address is not allowed",
   incomplete_domain:  "Domain name is incomplete"}, 'en')
 ```
-Note: Release 0.1.14 fixed setting error messages by locale.
-Also, it will accept a ruby "collected" hash as before,
 
-Full translation support would be ideal though.
-
-### Available Configuration Settings
-
-* sha1_secret -
-  This application-level secret is appended to the email_address to compute
-  the SHA1 Digest, making it unique to your application so it can't easily be
-  discovered by comparing against a known list of email/sha1 pairs.
-
-* sha256_secret -
-  This application-level secret is appended to the email_address to compute
-  the SHA256 Digest, making it unique to your application so it can't easily be
-  discovered by comparing against a known list of email/sha256 pairs.
-
-* munge_string - "*****", the string to replace into munged addresses.
-
-For local part configuration:
-
-* local_downcase: true.
-  Downcase the local part. You probably want this for uniqueness.
-  RFC says local part is case insensitive, that's a bad part.
-
-* local_fix:  true.
-  Make simple fixes when available, remove spaces, condense multiple punctuations
-
-* local_encoding:     :ascii, :unicode,
-  Enable Unicode in local part. Most mail systems do not yet support this.
-  You probably want to stay with ASCII for now.
-
-* local_parse:        nil, ->(local) { [mailbox, tag, comment] }
-  Specify an optional lambda/Proc to parse the local part. It should return an
-  array (tuple) of mailbox, tag, and comment.
-
-* local_format:
-    * :conventional - word ( puncuation{1} word )*
-    * :relaxed      - alphanum ( allowed_characters)* alphanum
-    * :standard     - RFC Compliant email addresses (anything goes!)
-
-* local_size:         1..64,
-  A Range specifying the allowed size for mailbox + tags + comment
-
-* tag_separator:      nil, character (+)
-  Nil, or a character used to split the tag from the mailbox
-
-For the mailbox (AKA account, role), without the tag
-* mailbox_size:       1..64
-  A Range specifying the allowed size for mailbox
-
-* mailbox_canonical:  nil, ->(mailbox) { mailbox }
-  An optional lambda/Proc taking a mailbox name, returning a canonical
-  version of it. (E.G.: gmail removes '.' characters)
-
-* mailbox_validator:  nil, ->(mailbox) { true }
-  An optional lambda/Proc taking a mailbox name, returning true or false.
-
-* host_encoding:      :punycode,  :unicode,
-  How to treat International Domain Names (IDN). Note that most mail and
-  DNS systems do not support unicode, so punycode needs to be passed.
-  :punycode           Convert Unicode names to punycode representation
-  :unicode            Keep Unicode names as is.
-
-* host_validation:
-  :mx                 Ensure host is configured with DNS MX records
-  :a                  Ensure host is known to DNS (A Record)
-  :syntax             Validate by syntax only, no Network verification
-  :connect            Attempt host connection (Experimental and Dangerous: Do not use)
-                      The :host_timeout setting is the maximum number
-                      of seconds to wait during the :connect validation
-
-* host_size:          1..253,
-  A range specifying the size limit of the host part,
-
-* host_allow_ip:      false,
-  Allow IP address format in host: [127.0.0.1], [IPv6:::1]
-
-* address_validation: :parts, :smtp, ->(address) { true }
-  Address validation policy
-  :parts              Validate local and host.
-  :smtp               Validate via SMTP (not implemented, BAD!)
-  A lambda/Proc taking the address string, returning true or false
-
-* address_size:       3..254,
-  A range specifying the size limit of the complete address
-
-For provider rules to match to domain names and Exchanger hosts
-The value is an array of match tokens.
-* host_match:         %w(.org example.com hotmail. user*@ sub.*.com)
-* exchanger_match:    %w(google.com 127.0.0.1 10.9.8.0/24 ::1/64)
-
-### Namespace conflict resolution
-
-If your application already uses the `EmailAddress` class name,
-it's possible to create an alias prior to loading your code:
-
-For a Rails application, you can do this in `config/application.rb`
-after the `Bundler.require` line, usually:
-
-```ruby
-Bundler.require(*Rails.groups)
-```
-
-Add these lines immediately after that point:
-
-```ruby
-EmailAddressValidator = EmailAddress
-Object.send(:remove_const, :EmailAddress)
-```
-
-Then your application loads with your EmailAddress class. You may
-then use this gem with `EmailAddressValidator` or whatever name you
-gave it above:
-
-```ruby
-EmailAddressValidator.valid?("clark.kent@gmail.com") # => true
-```
+Complete settings and methods are found in the config.rb file within.
 
 ## Notes
 
@@ -661,5 +528,5 @@ This project lives at [https://github.com/afair/email_address/](https://github.c
 
 #### Authors
 
-* [Allen Fair](https://github.com/afair) ([@allenfair](https://twitter.com/allenfair)):
+- [Allen Fair](https://github.com/afair) ([@allenfair](https://twitter.com/allenfair)):
   I've worked with email-based applications and email addresses since 1999.
