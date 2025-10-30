@@ -357,8 +357,8 @@ module EmailAddress
     # True if the part matches the RFC standard format
     def standard?
       self.syntax = :invalid
-      return false unless STANDARD_LOCAL_REGEX.match?(local)
       return false unless valid_size?
+      return false unless STANDARD_LOCAL_REGEX.match?(local)
       return false unless valid_encoding?
       self.syntax = :standard
       true
