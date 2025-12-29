@@ -332,6 +332,10 @@ module EmailAddress
       @_dns_a_record ||= []
     end
 
+    def dns_a_record_exist?
+      dns_a_record.size > 0
+    end
+
     # Returns an array of Exchanger hosts configured in DNS.
     # The array will be empty if none are configured.
     def exchangers
@@ -404,7 +408,7 @@ module EmailAddress
     # True if the host name has a DNS A Record
     def valid_dns?
       return true unless dns_enabled?
-      dns_a_record.size > 0 || set_error(:domain_unknown)
+      dns_a_record_exist? || exchangers.exist? || set_error(:domain_unknown)
     end
 
     # True if the host name has valid MX servers configured in DNS

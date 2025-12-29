@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.homepage = "https://github.com/afair/email_address"
   spec.license = "MIT"
 
-  spec.required_ruby_version = ">= 2.5", "< 4.1"
+  spec.required_ruby_version = ">= 2.5", "< 5.0"
   spec.files = `git ls-files`.split($/)
   spec.executables = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]

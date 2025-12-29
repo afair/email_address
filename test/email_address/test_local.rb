@@ -102,15 +102,12 @@ class TestLocal < MiniTest::Test
     assert EmailAddress.valid?("username_____@gmail.com")
   end
 
-  def test_tag_punctuation
-    assert EmailAddress.valid?("first.last+foo.bar@gmail.com")
-  end
-
   def test_relaxed_tag
     assert EmailAddress.valid? "foo+abc@example.com", host_validation: :syntax, local_format: :relaxed
   end
 
   def test_tag_punctuation
+    assert EmailAddress.valid?("first.last+foo.bar@gmail.com")
     refute EmailAddress.valid?("name+tag.@domain.com", host_validation: :syntax)
     assert EmailAddress.valid?("name+tag.-@domain.com", host_validation: :syntax, local_format: :relaxed)
   end

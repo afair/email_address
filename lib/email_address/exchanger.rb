@@ -34,6 +34,11 @@ module EmailAddress
       end
     end
 
+    # Has any MX records?
+    def exist?
+      count > 0
+    end
+
     # Returns the provider name based on the MX-er host names, or nil if not matched
     def provider
       return @provider if defined? @provider

@@ -166,4 +166,8 @@ class TestHost < MiniTest::Test
   def test_triple_dash_domain 
     assert EmailAddress::Host.new("off---white.com").valid?
   end
+
+  def test_mx_only_domain 
+    assert EmailAddress::Host.new("mail.usqrl.com").valid?
+  end
 end
