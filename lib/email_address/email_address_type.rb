@@ -34,7 +34,7 @@ module EmailAddress
 
     # From user input, setter
     def cast(value)
-      super(Address.new(value).normal)
+      super(value && Address.new(value).normal)
     end
 
     # From a database value
