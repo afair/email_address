@@ -31,6 +31,10 @@ class TestAR < MiniTest::Test
         user = User.new(email: "Pat.Jones+ASDF@GMAIL.com")
         assert_equal "pat.jones+asdf@gmail.com", user.email
         assert_equal "patjones@gmail.com", user.canonical_email
+
+        user = User.new(email: nil)
+        assert_nil user.email
+        assert_nil user.canonical_email
       end
     end
   end
