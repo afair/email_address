@@ -123,9 +123,9 @@ module EmailAddress
       local_encoding: :ascii, # :ascii, :unicode,
       local_parse: nil, # nil, Proc
       local_format: :conventional, # :conventional, :relaxed, :redacted, :standard, Proc
-      local_size: 1..64,
+      local_size: 0..64,
       tag_separator: "+", # nil, character
-      mailbox_size: 1..64, # without tag
+      mailbox_size: 0..64, # without tag
       mailbox_canonical: nil, # nil,  Proc
       mailbox_validator: nil, # nil,  Proc
 
