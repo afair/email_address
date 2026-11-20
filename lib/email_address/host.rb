@@ -1,5 +1,6 @@
 require "simpleidn"
 require "resolv"
+require "ipaddr"
 
 module EmailAddress
   ##############################################################################

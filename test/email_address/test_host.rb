@@ -1,4 +1,7 @@
 require_relative "../test_helper"
+require "bundler"
+require "open3"
+require "rbconfig"
 
 class TestHost < MiniTest::Test
   def test_host
@@ -66,6 +69,26 @@ class TestHost < MiniTest::Test
     h = EmailAddress::Host.new("[IPv6:::1]", host_allow_ip: true, host_local: true)
     assert_equal "::1", h.ip_address
     assert_equal true, h.valid?
+  end
+
+  def test_ipv6_is_valid_with_plain_require
+    simpleidn_path = Gem::Specification.find_by_name("simpleidn").full_gem_path
+    script = <<~RUBY
+      abort "IPAddr was loaded before email_address" if defined?(IPAddr)
+      require "email_address"
+      abort "IPv6 address should be valid" unless EmailAddress.valid?("test@[IPv6:2001:db8::1]", host_allow_ip: true)
+    RUBY
+    env = {
+      "RUBYOPT" => "",
+      "RUBYLIB" => nil
+    }
+    _stdout, stderr, status = Bundler.with_unbundled_env do
+      Open3.capture3(
+        env, RbConfig.ruby, "-Ilib", "-I#{simpleidn_path}/lib", "-e", script,
+        chdir: File.expand_path("../..", __dir__)
+      )
+    end
+    assert status.success?, stderr
   end
 
   def test_localhost
