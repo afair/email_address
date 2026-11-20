@@ -446,23 +446,31 @@ module EmailAddress
     # is a potentially valid IP address. It does not check if the address
     # is reachable.
     def valid_ip?
+      bool = true
       if !@config[:host_allow_ip]
         bool = set_error(:ip_address_forbidden)
-      elsif ip_address.include?(":")
-        bool = ip_address.match(Resolv::IPv6::Regex) ? true : set_error(:ipv6_address_invalid)
-      elsif ip_address.include?(".")
-        bool = ip_address.match(Resolv::IPv4::Regex) ? true : set_error(:ipv4_address_invalid)
+      else 
+        _ = IPAddr.new(ip_address) # Rescue invalid address
       end
       if bool && (localhost? && !@config[:host_local])
         bool = set_error(:ip_address_no_localhost)
       end
       bool
+    rescue IPAddr::InvalidAddressError
+      if ip_address.include?(":")
+        set_error(:ipv6_address_invalid)
+      else 
+        set_error(:ipv4_address_invalid)
+      end
+      bool = false
     end
 
     def localhost?
       return true if host_name == "localhost"
       return false unless ip_address
       IPAddr.new(ip_address).loopback?
+    rescue IPAddr::InvalidAddressError
+      return false
     end
 
     # Connects to host to test it can receive email. This should NOT be performed

@@ -170,4 +170,9 @@ class TestHost < MiniTest::Test
   def test_mx_only_domain 
     assert EmailAddress::Host.new("mail.usqrl.com").valid?
   end
+
+  def test_bad_ipv6_host
+    assert EmailAddress.valid?("test@[IPv6:1111:2222:3333:4444:5555:6666:7777:88]", host_allow_ip: true)
+    assert !EmailAddress.valid?("test@[IPv6:1111:2222:3333:4444:5555:6666::7777:88]", host_allow_ip: true)
+  end
 end
